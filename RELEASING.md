@@ -4,7 +4,11 @@ This repository contains only the multi-panel plugin. Its source and build input
 
 ## Current candidate
 
-Version **0.2.7** is the first public-release candidate. It keeps the verified 0.2.6 runtime behavior and adds release tooling, documentation and attribution. No public GitHub release or npm publication has happened as part of preparation.
+Version **0.2.9** is a local activation candidate. It keeps background chats' browser and terminal sidebars mounted behind their pane so switching chats no longer reloads the browser. Version 0.2.8 added workspace tabs with retained background chats and per-tab layouts, running-chat indicators, four unbound tab commands, and double-click divider equalization. No version tag, public GitHub release or npm publication is part of this local activation.
+
+Known limitation: duplicate existing-chat selection across workspace tabs is not prevented. Keep each chat in only one workspace tab; native composer and sidebar ownership remain session-scoped.
+
+The activation tarball uses a staging snapshot of the current compiled code, metadata and notices, plus the committed README and its verified four-demo media set. Its README version is updated to 0.2.9. Pending seven-demo README/media edits are not included; the source edits remain intact. The older recordings do not demonstrate workspace tabs or double-click equalization.
 
 Supported runtime: **DSH 0.2.0-rc.2** only. Other versions must be reviewed and validated before changing the pinned artifact hashes.
 
@@ -22,10 +26,10 @@ Supported runtime: **DSH 0.2.0-rc.2** only. Other versions must be reviewed and 
    pnpm pack --pack-destination release
    ```
 
-   Packaging repeats build/full tests/formatting through `prepack`. Inspect the final tarball file list. It should contain only the generated `lib`, package manifest, Cordis patch, README and applicable license/notice files. Do not upload old development tarballs.
+   Normal source packaging repeats build/full tests/formatting through `prepack`. The local activation snapshot omits that hook only after those checks pass in the current source checkout; build scripts and runtime evidence are not copied into staging. Inspect the final tarball file list. It should contain only generated `lib`, the package manifest, Cordis patch, release/contribution documentation, verified public media and applicable license/notice files. Do not upload old development tarballs.
 
 4. Manually verify cold startup, the native agent menu, distinct chat drafts, target-only file intake, nested pane splits, sidebar splits, maximize/restore and rollback in the existing DSH GUI. Check the actual desktop surface for desktop guest/file behavior; browser-only evidence is not a desktop test.
-5. Record the verified runtime, check results and known limitations in release notes. The 0.2.6 behavior passed 135 tests and four-pane native browser verification before this public-release preparation; run the checks again for the exact release archive.
+5. Record the verified runtime, check results and known limitations in release notes. Run the current full and portable suites for the exact activation code; the earlier 0.2.6 browser evidence does not verify the new workspace-tab or equalization behavior.
 6. Confirm third-party notices accompany the archive. Do not relicense the native upstream code or omit its notices. See THIRD_PARTY_NOTICES.md.
 7. Commit the release state, verify a clean working tree, and create an annotated version tag after the release destination is confirmed.
 

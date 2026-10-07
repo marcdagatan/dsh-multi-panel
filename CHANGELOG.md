@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+## 0.2.9 — Local activation candidate
+
+- Keep a chat's browser alive when you switch that pane to another chat. A
+  chat whose sidebar has a browser or terminal tab now stays loaded, hidden
+  behind its pane, so returning to it no longer reloads the page. Closing the
+  pane or its last browser/terminal tab releases it; reopening it in a
+  different pane still reloads.
+
+## 0.2.8 — Local activation candidate
+
 - Double-click a divider to equalize the panes in its row or column.
 - Add workspace tabs above the panes: each tab holds its own pane layout, and
   **+** opens a fresh blank workspace.
@@ -11,6 +21,9 @@
 - Remember tabs and each tab's layout in this browser; the first tab keeps the
   existing saved layout.
 - Add four unbound tab shortcuts: new, next, previous and close tab.
+- Known limitation: duplicate existing-chat selection across workspace tabs is
+  not prevented. Keep each chat in only one workspace tab.
+- Support DSH 0.2.0-rc.2 only; this is a local candidate, not a public release.
 
 ## 0.2.7 — Public-release preparation
 

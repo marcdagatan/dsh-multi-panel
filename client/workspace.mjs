@@ -257,6 +257,19 @@ function Pane({
   const reference = leaf.sessionId
     ? workspace.reference(leaf.sessionId)
     : undefined;
+  const holds = React.useRef(new Map());
+  // One stable callback per chat, so tab bodies do not re-retain every render.
+  function retainTabFor(sessionId) {
+    if (!holds.current.has(sessionId))
+      holds.current.set(sessionId, (_tabId, signal) =>
+        workspace.retainTab(sessionId, signal),
+      );
+    return holds.current.get(sessionId);
+  }
+  const background = Object.keys(state.background ?? {}).filter(
+    (sessionId) =>
+      state.background[sessionId] === leaf.id && sessionId !== leaf.sessionId,
+  );
   const style =
     state.maximizedId === leaf.id
       ? { inset: 0 }
@@ -302,24 +315,32 @@ function Pane({
       setCreating(false);
     }
   }
-  const content = () =>
+  // Children stay positional so a chat's sidebar keeps its identity (and its
+  // browser webview) while it moves between the shown and background bodies.
+  const content = (sessionId = leaf.sessionId, shown = true) =>
     h(
       "div",
-      { className: "dshMulti-paneBody" },
-      h(
-        "div",
-        { className: "dshMulti-conversation" },
-        renderSlot("main.conversation", {}),
-      ),
-      leaf.sessionId && reference
+      {
+        className: "dshMulti-paneBody",
+        style: shown ? undefined : { display: "none" },
+      },
+      shown
+        ? h(
+            "div",
+            { className: "dshMulti-conversation" },
+            renderSlot("main.conversation", {}),
+          )
+        : null,
+      sessionId && workspace.reference(sessionId)
         ? renderSlot("dsh.multi.sidebar", {
             paneId: leaf.id,
-            visible,
-            focused,
+            visible: visible && shown,
+            focused: focused && shown,
             width: size.width,
             viewportWidth: size.width,
             canShow: true,
             preferences,
+            retainTab: retainTabFor(sessionId),
           })
         : null,
     );
@@ -481,13 +502,38 @@ function Pane({
           })
         : null,
     ),
-    leaf.sessionId && !reference
-      ? h(
-          "div",
-          { className: "dshMulti-unavailable", role: "status" },
-          "Chat could not be opened. Choose another chat above.",
-        )
-      : h(SessionProvider, { session: reference, empty: content }, content()),
+    [
+      leaf.sessionId && !reference
+        ? h(
+            "div",
+            {
+              key: "unavailable",
+              className: "dshMulti-unavailable",
+              role: "status",
+            },
+            "Chat could not be opened. Choose another chat above.",
+          )
+        : h(
+            SessionProvider,
+            {
+              key: leaf.sessionId ?? "",
+              session: reference,
+              empty: () => content(),
+            },
+            content(),
+          ),
+      ...background.map((sessionId) =>
+        h(
+          SessionProvider,
+          {
+            key: sessionId,
+            session: workspace.reference(sessionId),
+            empty: () => null,
+          },
+          content(sessionId, false),
+        ),
+      ),
+    ],
     target?.paneId === leaf.id
       ? h(
           "div",

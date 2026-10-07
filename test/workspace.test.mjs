@@ -17,7 +17,7 @@ import { normalizePreferences } from "../client/preferences.mjs";
 const h = React.createElement;
 const Session = React.createContext(null);
 
-function fixture(initialPreferences = {}) {
+function fixture(initialPreferences = {}, { keepMounted = false } = {}) {
   let preferences = normalizePreferences(initialPreferences);
   const preferenceListeners = new Set();
   const preferencesSource = {
@@ -158,8 +158,18 @@ function fixture(initialPreferences = {}) {
     );
   const renderSlot = (name, props) =>
     name === "main.conversation" ? h(NativeChat) : h(Sidebar, props);
+  const sidebarMounts = {};
+  // Like a native keep-mounted tab (the browser), hold the chat while mounted.
   function Sidebar(props) {
     const sessionId = React.useContext(Session);
+    const [signal] = React.useState(() => new AbortController().signal);
+    React.useLayoutEffect(() => {
+      sidebarMounts[sessionId] = (sidebarMounts[sessionId] ?? 0) + 1;
+    }, [sessionId]);
+    React.useLayoutEffect(
+      () => (keepMounted ? props.retainTab("browser", signal) : undefined),
+      [props.retainTab, signal],
+    );
     return h(
       "div",
       {
@@ -193,6 +203,7 @@ function fixture(initialPreferences = {}) {
     get mounted() {
       return mounted;
     },
+    sidebarMounts,
     cleanup() {
       act(() => root.unmount());
       workspace.dispose();
@@ -544,6 +555,47 @@ test("double-clicking a divider evens out the panes it separates", () => {
       ),
     );
     assert.equal(ui.workspace.getSnapshot().tree.ratio, 0.5);
+  } finally {
+    ui.cleanup();
+  }
+});
+
+test("a replaced chat's keep-mounted sidebar stays mounted behind its pane and returns intact", () => {
+  const ui = fixture({}, { keepMounted: true });
+  try {
+    const pane = ui.workspace.getSnapshot().activeId;
+    const sidebar = ui.container.querySelector('[data-native-sidebar="a"]');
+    act(() => ui.workspace.select(pane, "b"));
+    assert.equal(
+      ui.container.querySelector('[data-native-sidebar="a"]'),
+      sidebar,
+    );
+    assert.equal(sidebar.getAttribute("data-visible"), "false");
+    assert.equal(sidebar.closest(".dshMulti-paneBody").style.display, "none");
+    assert.equal(ui.container.querySelector('[data-native-chat="a"]'), null);
+    assert.ok(ui.container.querySelector('[data-native-chat="b"]'));
+    act(() => ui.workspace.select(pane, "a"));
+    assert.equal(
+      ui.container.querySelector('[data-native-sidebar="a"]'),
+      sidebar,
+    );
+    assert.equal(sidebar.getAttribute("data-visible"), "true");
+    assert.equal(sidebar.closest(".dshMulti-paneBody").style.display, "");
+    assert.equal(ui.sidebarMounts.a, 1);
+    assert.deepEqual(ui.workspace.getSnapshot().background, { b: pane });
+  } finally {
+    ui.cleanup();
+  }
+});
+
+test("a replaced chat without keep-mounted tabs unmounts its sidebar as before", () => {
+  const ui = fixture();
+  try {
+    const pane = ui.workspace.getSnapshot().activeId;
+    act(() => ui.workspace.select(pane, "b"));
+    assert.equal(ui.container.querySelector('[data-native-sidebar="a"]'), null);
+    act(() => ui.workspace.select(pane, "a"));
+    assert.equal(ui.sidebarMounts.a, 2);
   } finally {
     ui.cleanup();
   }

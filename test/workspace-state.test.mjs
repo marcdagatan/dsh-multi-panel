@@ -1725,3 +1725,103 @@ describe("workspace tab activation", () => {
     assert.deepEqual(f.navigationCalls, []);
   });
 });
+
+describe("workspace background chats with keep-mounted tabs", () => {
+  it("keeps a replaced chat retained behind its pane and restores it there without reacquiring", () => {
+    const f = fixture();
+    try {
+      const pane = paneFor(f.state, "a");
+      const aReference = f.state.reference("a");
+      f.state.retainTab("a", new AbortController().signal);
+      f.navigation.openSession("b");
+      assert.deepEqual(sessionsIn(f.state), ["b"]);
+      assert.deepEqual(f.state.getSnapshot().background, { a: pane.id });
+      assert.equal(f.state.reference("a"), aReference);
+      assert.equal(aReference.releases, 0);
+      f.navigation.openSession("a");
+      assert.deepEqual(sessionsIn(f.state), ["a"]);
+      assert.equal(paneFor(f.state, "a").id, pane.id);
+      assert.deepEqual(f.state.getSnapshot().background, {});
+      assert.equal(f.state.reference("a"), aReference);
+      assert.equal(f.retained("a").length, 1);
+      assert.equal(f.records.filter((r) => r.sessionId === "a").length, 1);
+    } finally {
+      f.state.dispose();
+    }
+  });
+
+  it("releases a background chat when its last held tab is released or closed", () => {
+    const f = fixture();
+    try {
+      const pane = paneFor(f.state, "a");
+      const aReference = f.state.reference("a");
+      const release = f.state.retainTab("a", new AbortController().signal);
+      const closing = new AbortController();
+      f.state.retainTab("a", closing.signal);
+      f.state.select(pane.id, "b");
+      release();
+      release();
+      assert.deepEqual(f.state.getSnapshot().background, { a: pane.id });
+      assert.equal(aReference.releases, 0);
+      closing.abort();
+      assert.deepEqual(f.state.getSnapshot().background, {});
+      assert.equal(aReference.releases, 1);
+      assert.equal(f.state.reference("a"), undefined);
+    } finally {
+      f.state.dispose();
+    }
+  });
+
+  it("still releases replaced chats that hold no keep-mounted tabs", () => {
+    const f = fixture();
+    try {
+      const aReference = f.state.reference("a");
+      f.navigation.openSession("b");
+      assert.deepEqual(f.state.getSnapshot().background, {});
+      assert.equal(aReference.releases, 1);
+    } finally {
+      f.state.dispose();
+    }
+  });
+
+  it("closing a pane drops its background chats, and reopening elsewhere leaves the background", () => {
+    const f = fixture();
+    try {
+      const first = paneFor(f.state, "a");
+      f.state.split(first.id, "b", "right");
+      const second = paneFor(f.state, "b");
+      const bReference = f.state.reference("b");
+      f.state.retainTab("a", new AbortController().signal);
+      f.state.retainTab("b", new AbortController().signal);
+      f.state.select(first.id, "c");
+      f.state.select(second.id, "d");
+      assert.deepEqual(f.state.getSnapshot().background, {
+        a: first.id,
+        b: second.id,
+      });
+      f.state.select(second.id, "a");
+      assert.deepEqual(f.state.getSnapshot().background, { b: second.id });
+      assert.equal(paneFor(f.state, "a").id, second.id);
+      f.state.close(second.id);
+      assert.deepEqual(f.state.getSnapshot().background, {});
+      assert.equal(bReference.releases, 1);
+      assertReferenceOwnership(f);
+    } finally {
+      f.state.dispose();
+    }
+  });
+
+  it("never persists background chats", () => {
+    const f = fixture();
+    try {
+      f.state.retainTab("a", new AbortController().signal);
+      f.navigation.openSession("b");
+      assert.deepEqual(Object.keys(f.writes.at(-1)).sort(), [
+        "activeId",
+        "tree",
+      ]);
+    } finally {
+      f.state.dispose();
+    }
+  });
+});

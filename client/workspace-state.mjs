@@ -124,9 +124,17 @@ export function createWorkspaceState({
     warning = "Saved pane layout could not be restored.";
     console.warn("Multi-panel layout restoration failed:", error);
   }
-  let snapshot = { tree, activeId, maximizedId: null, undo: null, warning };
+  let snapshot = {
+    tree,
+    activeId,
+    maximizedId: null,
+    undo: null,
+    warning,
+    background: {},
+  };
   const listeners = new Set();
   const references = new Map();
+  const tabHolds = new Map();
   const pendingChats = new Set();
   let disposed = false;
   let initial = adoptMainView;
@@ -151,6 +159,7 @@ export function createWorkspaceState({
           }
         : {}),
     };
+    snapshot.background = nextBackground(previous.tree);
     for (const request of pendingChats) {
       const target = findLeaf(snapshot.tree, request.paneId);
       if (
@@ -175,16 +184,45 @@ export function createWorkspaceState({
     for (const listener of listeners) listener();
   }
 
+  /**
+   * A chat leaving its pane while its sidebar holds keep-mounted tabs (the
+   * browser's webview, terminals) stays behind that pane instead of unmounting,
+   * because removing a webview from the page destroys and reloads its guest.
+   * Closing the pane, or the last held tab closing, releases it as before.
+   */
+  function nextBackground(previousTree) {
+    const shown = new Set(leaves(snapshot.tree).map((leaf) => leaf.sessionId));
+    const list = sessions.list.getSnapshot();
+    const keep = (sessionId, paneId) =>
+      sessionId &&
+      !shown.has(sessionId) &&
+      tabHolds.has(sessionId) &&
+      findLeaf(snapshot.tree, paneId) &&
+      (list.phase !== "ready" || Object.hasOwn(list.byId, sessionId));
+    const next = {};
+    for (const [sessionId, paneId] of Object.entries(snapshot.background))
+      if (keep(sessionId, paneId)) next[sessionId] = paneId;
+    for (const leaf of leaves(previousTree))
+      if (keep(leaf.sessionId, leaf.id)) next[leaf.sessionId] = leaf.id;
+    const same =
+      Object.keys(next).length === Object.keys(snapshot.background).length &&
+      Object.entries(next).every(
+        ([sessionId, paneId]) => snapshot.background[sessionId] === paneId,
+      );
+    return same ? snapshot.background : next;
+  }
+
   function reconcileReferences() {
     if (reconcilingReferences || sessions.list.getSnapshot().phase !== "ready")
       return;
     reconcilingReferences = true;
     try {
-      const wanted = new Set(
-        leaves(snapshot.tree)
+      const wanted = new Set([
+        ...leaves(snapshot.tree)
           .map((leaf) => leaf.sessionId)
           .filter(Boolean),
-      );
+        ...Object.keys(snapshot.background),
+      ]);
       // Acquire before releasing old panes so a move never unloads its generation.
       for (const sessionId of wanted) {
         if (references.has(sessionId)) continue;
@@ -347,6 +385,30 @@ export function createWorkspaceState({
     },
     reference(sessionId) {
       return references.get(sessionId);
+    },
+    /**
+     * Hold a chat for one mounted keep-mounted sidebar tab, mirroring the native
+     * sidebar's retainTab. Held chats survive replacement in their pane.
+     * @param {string} sessionId
+     * @param {AbortSignal} signal - tab occurrence lifetime; abort releases.
+     * @returns {() => void} idempotent release.
+     */
+    retainTab(sessionId, signal) {
+      if (disposed || signal.aborted) return () => {};
+      tabHolds.set(sessionId, (tabHolds.get(sessionId) ?? 0) + 1);
+      let held = true;
+      const release = () => {
+        if (!held) return;
+        held = false;
+        signal.removeEventListener("abort", release);
+        const count = tabHolds.get(sessionId) - 1;
+        if (count > 0) tabHolds.set(sessionId, count);
+        else tabHolds.delete(sessionId);
+        if (count === 0 && Object.hasOwn(snapshot.background, sessionId))
+          publish({});
+      };
+      signal.addEventListener("abort", release, { once: true });
+      return release;
     },
     /** Tab switch: show this tab's focused chat; never adopt the previous tab's. */
     activate() {

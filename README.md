@@ -41,6 +41,7 @@ one shared session list stays on the left.
 | **Native Chat Tools**       | Keep each chat's composer, approvals, native views, and available agent presets.         |
 | **Dock Sidebar Tabs**       | Split a chat's sidebar left, right, above, or below; keep its layout local to that chat. |
 | **Targeted File Drops**     | Drop files into the intended chat, with clear pane-specific feedback.                    |
+| **Workspace Tabs**          | Keep several pane layouts in tabs; chats in background tabs keep running.                |
 | **Layout Controls**         | Resize, maximize, restore, close a pane, or undo a layout change.                        |
 | **Remember Your Workspace** | Save layout and widths in this browser; tune 25 profile-wide preferences.                |
 
@@ -201,14 +202,14 @@ Watch the settings walkthrough in [Demos](#demos).
 ### Keyboard Shortcuts
 
 Open **Settings → General → Edit shortcuts** and search **Multi-panel**.
-All **eight commands are unbound by default**, preserving your existing keys:
+All **twelve commands are unbound by default**, preserving your existing keys:
 
-| Layout                            | Navigation and History         |
-| --------------------------------- | ------------------------------ |
-| Split using the default direction | Focus next pane                |
-| Split to the right                | Focus previous pane            |
-| Split below                       | Undo layout change             |
-| Maximize or restore pane          | Close pane (keep chat running) |
+| Layout                            | Navigation and History         | Workspace Tabs                           |
+| --------------------------------- | ------------------------------ | ---------------------------------------- |
+| Split using the default direction | Focus next pane                | New workspace tab                        |
+| Split to the right                | Focus previous pane            | Next workspace tab                       |
+| Split below                       | Undo layout change             | Previous workspace tab                   |
+| Maximize or restore pane          | Close pane (keep chat running) | Close workspace tab (chats keep running) |
 
 Split commands create a fresh blank native chat. Pane commands do not run while
 a settings/dialog modal is open.

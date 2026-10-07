@@ -11,6 +11,7 @@ import * as Slots from "../runtime-evidence/dsh/node_modules/@deepseek-ai/dsh-cl
 import * as preferences from "../client/preferences.mjs";
 import * as workspaceState from "../client/workspace-state.mjs";
 import * as shortcuts from "../client/shortcuts.mjs";
+import * as workspaceTabs from "../client/workspace-tabs.mjs";
 import { buildConversationFork } from "../scripts/conversation-fork.mjs";
 
 const artifact = (name) =>
@@ -63,7 +64,8 @@ function loadNative(source, workspaceView) {
     "dsh-multi-panel/preferences": preferences,
     "dsh-multi-panel/workspace-state": workspaceState,
     "dsh-multi-panel/shortcuts": shortcuts,
-    "dsh-multi-panel/workspace": { MultiWorkspace: workspaceView },
+    "dsh-multi-panel/workspace-tabs": workspaceTabs,
+    "dsh-multi-panel/workspace-tabs-view": { WorkspaceTabs: workspaceView },
   };
   new Function("window", source)({
     __ModuleLoader__: {
@@ -216,12 +218,14 @@ test("cold start registers the native preset before rendering and keeps selectio
     ctx.reflect.provide(name, value);
 
   let workspace;
+  let tabs;
   const conversation = loadNative(
     buildConversationFork(artifact("dsh-client-ui-conversation")),
     (props) => {
       assert.ok(ctx.get("uiConversation"));
       assert.ok(ctx.get("conversation"));
-      workspace = props.workspace;
+      tabs = props.tabs;
+      workspace = tabs.active();
       return React.createElement("div", null, "ready workspace");
     },
   );
@@ -319,6 +323,15 @@ test("cold start registers the native preset before rendering and keeps selectio
       2,
       "native committed-chat and Developer tools guards remain authoritative",
     );
+
+    // A blank tab never claims or releases the chats kept alive in the first.
+    tabs.add();
+    assert.equal(tabs.getSnapshot().tabs.length, 2);
+    assert.equal(tabs.active().getSnapshot().tree.sessionId, null);
+    assert.equal(catalog.getSnapshot().byId.alpha.retainedBy.multiPanel, 1);
+    assert.equal(catalog.getSnapshot().byId.beta.retainedBy.multiPanel, 1);
+    tabs.select(tabs.getSnapshot().tabs[0].id);
+    assert.equal(tabs.active(), workspace);
 
     await conversationOwner.dispose();
     await settle(ctx);

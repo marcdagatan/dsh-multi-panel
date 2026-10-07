@@ -9,6 +9,10 @@ const COMMANDS = [
   ["maximize", "Maximize or restore pane"],
   ["close", "Close pane (keep chat running)"],
   ["undo", "Undo layout change"],
+  ["new-tab", "New workspace tab"],
+  ["next-tab", "Next workspace tab"],
+  ["previous-tab", "Previous workspace tab"],
+  ["close-tab", "Close workspace tab (chats keep running)"],
 ];
 
 function focusPane(root, paneId) {
@@ -23,8 +27,26 @@ function focusPane(root, paneId) {
   });
 }
 
-/** Native shortcut catalog owns key recording, persistence, conflicts and keyboard dispatch. */
-export function paneShortcutCommands(workspace, preferencesSource) {
+function runTabCommand(tabs, action) {
+  const { tabs: list, activeId } = tabs.getSnapshot();
+  if (action === "new-tab") return { status: "handled", run: () => tabs.add() };
+  if (list.length < 2)
+    return { status: "blocked", reason: "Only one workspace tab is open" };
+  if (action === "close-tab")
+    return { status: "handled", run: () => tabs.close(activeId) };
+  const index = list.findIndex((tab) => tab.id === activeId);
+  const step = action === "next-tab" ? 1 : list.length - 1;
+  return {
+    status: "handled",
+    run: () => tabs.select(list[(index + step) % list.length].id),
+  };
+}
+
+/**
+ * Native shortcut catalog owns key recording, persistence, conflicts and
+ * keyboard dispatch. Pane commands act on the active workspace tab.
+ */
+export function paneShortcutCommands(tabs, preferencesSource) {
   return COMMANDS.map(([action, label]) => ({
     id: `multi-panel.${action}`,
     label: () => `Multi-panel: ${label}`,
@@ -36,6 +58,8 @@ export function paneShortcutCommands(workspace, preferencesSource) {
       const root = context.target?.closest?.(".dshMulti-workspace");
       if (!root || context.modal != null)
         return { status: "blocked", reason: "Focus a chat pane first" };
+      if (action.endsWith("-tab")) return runTabCommand(tabs, action);
+      const workspace = tabs.active();
       const state = workspace.getSnapshot();
       const panes = leaves(state.tree);
       const activeId = state.activeId;
@@ -86,9 +110,9 @@ export function paneShortcutCommands(workspace, preferencesSource) {
   }));
 }
 
-export function registerPaneShortcuts(ctx, workspace, preferencesSource) {
+export function registerPaneShortcuts(ctx, tabs, preferencesSource) {
   ctx.inject(["shortcuts"], (scope) => {
-    for (const command of paneShortcutCommands(workspace, preferencesSource)) {
+    for (const command of paneShortcutCommands(tabs, preferencesSource)) {
       scope.effect(
         () => scope.shortcuts.register(command),
         `multi-panel: ${command.id}`,

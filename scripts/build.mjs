@@ -84,6 +84,8 @@ for (const name of [
   "split-model",
   "workspace-state",
   "workspace",
+  "workspace-tabs",
+  "workspace-tabs-view",
 ]) {
   factories.push(
     moduleFactory(

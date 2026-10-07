@@ -24,7 +24,7 @@ export function buildConversationFork(source) {
   result = replaceOnce(
     result,
     'function ConversationPanel({ renderSlot }) {\n\t\t\treturn renderSlot("main.conversation", {});\n\t\t}',
-    'function ConversationPanel(props) {\n\t\t\tconst workspace = react.useSyncExternalStore(props.workspaceSource.subscribe, props.workspaceSource.getSnapshot, props.workspaceSource.getSnapshot);\n\t\t\treturn workspace === null ? null : react.createElement(require("dsh-multi-panel/workspace").MultiWorkspace, { ...props, workspace });\n\t\t}',
+    'function ConversationPanel(props) {\n\t\t\tconst tabs = react.useSyncExternalStore(props.workspaceSource.subscribe, props.workspaceSource.getSnapshot, props.workspaceSource.getSnapshot);\n\t\t\treturn tabs === null ? null : react.createElement(require("dsh-multi-panel/workspace-tabs-view").WorkspaceTabs, { ...props, tabs });\n\t\t}',
   );
   result = replaceOnce(
     result,
@@ -48,12 +48,13 @@ export function buildConversationFork(source) {
     `${controller}
 			ctx.inject(["uiConversation", "conversation"], (mount) => {
 				mount.effect(() => require("dsh-multi-panel/preferences").whenPreferencesReady(config.multiPanelPreferences, () => {
-					const workspace = require("dsh-multi-panel/workspace-state").createWorkspaceState({ sessions, navigation: workspaceNavigation, storage: globalThis.localStorage, getPreferences: config.multiPanelPreferences.getSnapshot, createSession: (originId) => { const rows = sessions.list.getSnapshot().byId; const origin = Object.hasOwn(rows, originId) ? rows[originId] : undefined; const selectedWorkspace = workspaceNavigation?.workspaces.list.getSnapshot().items.find((item) => item.sessionIds.includes(originId)); return sessions.create(selectedWorkspace ? { workspaceId: selectedWorkspace.workspaceId } : origin?.cwd ? { cwd: origin.cwd } : {}); } });
+					const createSession = (originId) => { const rows = sessions.list.getSnapshot().byId; const origin = Object.hasOwn(rows, originId) ? rows[originId] : undefined; const selectedWorkspace = workspaceNavigation?.workspaces.list.getSnapshot().items.find((item) => item.sessionIds.includes(originId)); return sessions.create(selectedWorkspace ? { workspaceId: selectedWorkspace.workspaceId } : origin?.cwd ? { cwd: origin.cwd } : {}); };
+					const tabs = require("dsh-multi-panel/workspace-tabs").createWorkspaceTabs({ storage: globalThis.localStorage, restore: config.multiPanelPreferences.getSnapshot().restoreLayout, createWorkspace: (options) => require("dsh-multi-panel/workspace-state").createWorkspaceState({ sessions, navigation: workspaceNavigation, storage: globalThis.localStorage, getPreferences: config.multiPanelPreferences.getSnapshot, createSession, ...options }) });
 					mount.effect(() => {
-						multiPanelWorkspaceSource.set(workspace);
-						return () => { multiPanelWorkspaceSource.set(null); workspace.dispose(); };
+						multiPanelWorkspaceSource.set(tabs);
+						return () => { multiPanelWorkspaceSource.set(null); tabs.dispose(); };
 					}, "multi-panel: retained pane sessions");
-					require("dsh-multi-panel/shortcuts").registerPaneShortcuts(mount, workspace, config.multiPanelPreferences);
+					require("dsh-multi-panel/shortcuts").registerPaneShortcuts(mount, tabs, config.multiPanelPreferences);
 				}), "multi-panel: startup preferences");
 			});`,
   );

@@ -3,6 +3,14 @@
 ## Unreleased
 
 - Double-click a divider to equalize the panes in its row or column.
+- Add workspace tabs above the panes: each tab holds its own pane layout, and
+  **+** opens a fresh blank workspace.
+- Keep every tab mounted and its chats retained while switching, so background
+  chats keep streaming and keep their drafts.
+- Show a pulsing dot on tabs with running chats and a pane count for split tabs.
+- Remember tabs and each tab's layout in this browser; the first tab keeps the
+  existing saved layout.
+- Add four unbound tab shortcuts: new, next, previous and close tab.
 
 ## 0.2.7 — Public-release preparation
 

@@ -36,8 +36,19 @@ function fixture() {
       calls.push(["undo"]);
     },
   };
+  let tabState = { tabs: [{ id: "one" }, { id: "two" }], activeId: "one" };
+  const tabs = {
+    active: () => workspace,
+    getSnapshot: () => tabState,
+    add: () => calls.push(["add-tab"]),
+    select(id) {
+      calls.push(["select-tab", id]);
+      tabState = { ...tabState, activeId: id };
+    },
+    close: (id) => calls.push(["close-tab", id]),
+  };
   const commands = new Map(
-    paneShortcutCommands(workspace, {
+    paneShortcutCommands(tabs, {
       getSnapshot: () => ({ splitDirection: "bottom", undoEnabled: true }),
     }).map((command) => [command.id.split(".")[1], command]),
   );
@@ -49,6 +60,9 @@ function fixture() {
     setState(next) {
       state = { ...state, ...next };
     },
+    setTabs(next) {
+      tabState = { ...tabState, ...next };
+    },
     close: () => dom.window.close(),
   };
 }
@@ -56,7 +70,7 @@ function fixture() {
 test("pane commands are configurable and unbound without replacing existing key bindings", () => {
   const f = fixture();
   try {
-    assert.equal(f.commands.size, 8);
+    assert.equal(f.commands.size, 12);
     for (const command of f.commands.values())
       assert.deepEqual(command.defaults, {});
     f.commands.get("split").resolve({ target: f.target, modal: null }).run();
@@ -110,6 +124,32 @@ test("close and Undo respect their visible layout availability", () => {
       f.commands.get("close").resolve({ target: f.target }).status,
       "blocked",
     );
+  } finally {
+    f.close();
+  }
+});
+
+test("tab shortcuts add, cycle and close workspace tabs", () => {
+  const f = fixture();
+  try {
+    const run = (name) =>
+      f.commands.get(name).resolve({ target: f.target, modal: null }).run();
+    run("new-tab");
+    run("next-tab");
+    run("previous-tab");
+    run("close-tab");
+    assert.deepEqual(f.calls, [
+      ["add-tab"],
+      ["select-tab", "two"],
+      ["select-tab", "one"],
+      ["close-tab", "one"],
+    ]);
+    f.setTabs({ tabs: [{ id: "one" }] });
+    for (const name of ["next-tab", "previous-tab", "close-tab"])
+      assert.equal(
+        f.commands.get(name).resolve({ target: f.target }).status,
+        "blocked",
+      );
   } finally {
     f.close();
   }

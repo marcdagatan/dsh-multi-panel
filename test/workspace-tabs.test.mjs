@@ -70,6 +70,7 @@ describe("workspace tabs", () => {
     assert.deepEqual(f.index(), {
       tabs: ["default", "tab-1"],
       activeId: "tab-1",
+      names: {},
     });
   });
 
@@ -136,6 +137,39 @@ describe("workspace tabs", () => {
       },
     });
     assert.deepEqual(disabled.ids(), ["default"]);
+  });
+
+  it("renames tabs, persists trimmed names and clears them when blank", () => {
+    const f = fixture();
+    const added = f.tabs.add();
+    f.tabs.rename(added, "  Research  ");
+    assert.equal(f.tabs.getSnapshot().tabs[1].name, "Research");
+    assert.deepEqual(f.index().names, { [added]: "Research" });
+    f.tabs.rename(added, "x".repeat(200));
+    assert.equal(f.tabs.getSnapshot().tabs[1].name.length, 60);
+    f.tabs.rename(added, "   ");
+    assert.equal(f.tabs.getSnapshot().tabs[1].name, undefined);
+    assert.deepEqual(f.index().names, {});
+    f.tabs.rename("missing", "Nope");
+    assert.deepEqual(f.index().names, {});
+  });
+
+  it("restores valid saved names and forgets a closed tab's name", () => {
+    const f = fixture({
+      saved: {
+        [TABS_STORAGE_KEY]: JSON.stringify({
+          tabs: ["default", "x"],
+          activeId: "x",
+          names: { default: "Main", x: 5, gone: "Old" },
+        }),
+      },
+    });
+    assert.deepEqual(
+      f.tabs.getSnapshot().tabs.map((tab) => tab.name),
+      ["Main", undefined],
+    );
+    f.tabs.close("default");
+    assert.deepEqual(f.index().names, {});
   });
 
   it("notifies subscribers and disposes every workspace", () => {

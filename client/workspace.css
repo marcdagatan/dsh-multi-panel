@@ -555,6 +555,19 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.dshMulti-tabName {
+  width: 140px;
+  height: 22px;
+  margin: 0 4px 0 6px;
+  padding: 0 6px;
+  border: 1px solid var(--dsw-alias-state-business-primary);
+  border-radius: 4px;
+  background: var(--dsw-alias-bg-layer-1);
+  color: var(--dsw-alias-label-primary);
+  font: inherit;
+  font-size: 12px;
+  outline: none;
+}
 .dshMulti-tabSelect small {
   color: var(--dsw-alias-label-tertiary);
 }

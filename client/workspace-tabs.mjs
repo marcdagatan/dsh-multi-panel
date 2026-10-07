@@ -2,6 +2,12 @@ import { STORAGE_KEY } from "./workspace-state.mjs";
 
 export const TABS_STORAGE_KEY = "dsh.multi-panel.tabs.v1";
 const DEFAULT_TAB = "default";
+const MAX_NAME = 60;
+
+const cleanName = (value) =>
+  typeof value === "string"
+    ? value.trim().slice(0, MAX_NAME) || undefined
+    : undefined;
 
 // The first tab keeps the pre-tabs layout key so existing layouts carry over.
 const layoutKey = (tabId) =>
@@ -21,6 +27,7 @@ function readIndex(storage) {
     return {
       ids,
       activeId: ids.includes(saved.activeId) ? saved.activeId : ids[0],
+      names: saved.names && typeof saved.names === "object" ? saved.names : {},
     };
   } catch (error) {
     console.warn("Multi-panel tab restoration failed:", error);
@@ -44,9 +51,10 @@ export function createWorkspaceTabs({
   let activeId = saved?.activeId ?? DEFAULT_TAB;
   const listeners = new Set();
 
-  function open(tabId, adoptMainView) {
+  function open(tabId, adoptMainView, name) {
     return {
       id: tabId,
+      name: cleanName(name),
       workspace: createWorkspace({
         storageKey: layoutKey(tabId),
         isActive: () => activeId === tabId,
@@ -57,7 +65,7 @@ export function createWorkspaceTabs({
 
   let snapshot = {
     tabs: (saved?.ids ?? [DEFAULT_TAB]).map((tabId) =>
-      open(tabId, tabId === activeId),
+      open(tabId, tabId === activeId, saved?.names[tabId]),
     ),
     activeId,
   };
@@ -67,7 +75,13 @@ export function createWorkspaceTabs({
     try {
       storage?.setItem(
         TABS_STORAGE_KEY,
-        JSON.stringify({ tabs: tabs.map((tab) => tab.id), activeId }),
+        JSON.stringify({
+          tabs: tabs.map((tab) => tab.id),
+          activeId,
+          names: Object.fromEntries(
+            tabs.filter((tab) => tab.name).map((tab) => [tab.id, tab.name]),
+          ),
+        }),
       );
     } catch (error) {
       console.warn("Multi-panel tab save failed:", error);
@@ -100,6 +114,15 @@ export function createWorkspaceTabs({
       if (tabId === activeId || !snapshot.tabs.some((tab) => tab.id === tabId))
         return;
       activate(tabId);
+    },
+    /** Name a tab; a blank name falls back to the focused chat's title. */
+    rename(tabId, value) {
+      if (!snapshot.tabs.some((tab) => tab.id === tabId)) return;
+      publish(
+        snapshot.tabs.map((tab) =>
+          tab.id === tabId ? { ...tab, name: cleanName(value) } : tab,
+        ),
+      );
     },
     /** The last tab cannot be closed; a closed active tab hands focus to a neighbour. */
     close(tabId) {

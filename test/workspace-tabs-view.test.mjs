@@ -246,3 +246,40 @@ test("tabs show running activity and close without losing the last tab", () => {
     f.cleanup();
   }
 });
+
+test("double-clicking a tab renames it, Enter saves, Escape cancels and blank restores the chat title", () => {
+  const f = fixture();
+  try {
+    const rename = (value, key) => {
+      const tab = f.tabButtons()[0];
+      act(() =>
+        tab.dispatchEvent(
+          new f.dom.window.MouseEvent("dblclick", { bubbles: true }),
+        ),
+      );
+      const input = f.$('input[aria-label="Tab name"]');
+      assert.equal(f.dom.window.document.activeElement, input);
+      act(() => {
+        Object.getOwnPropertyDescriptor(
+          f.dom.window.HTMLInputElement.prototype,
+          "value",
+        ).set.call(input, value);
+        input.dispatchEvent(new f.dom.window.Event("input", { bubbles: true }));
+      });
+      act(() =>
+        input.dispatchEvent(
+          new f.dom.window.KeyboardEvent("keydown", { key, bubbles: true }),
+        ),
+      );
+      assert.equal(f.$('input[aria-label="Tab name"]'), null);
+    };
+    rename("Research", "Enter");
+    assert.match(f.tabButtons()[0].textContent, /Research/);
+    rename("Ignored", "Escape");
+    assert.match(f.tabButtons()[0].textContent, /Research/);
+    rename("", "Enter");
+    assert.match(f.tabButtons()[0].textContent, /Chat a/);
+  } finally {
+    f.cleanup();
+  }
+});

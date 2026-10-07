@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 0.2.11 — Local activation candidate
+
+- Fix the chat box showing its placeholder over typed text. A chat open in
+  two workspace tabs mounted two composers, and only one could receive
+  typing. A chat now lives in one tab at a time: showing it in a tab
+  removes it from the others (their pane stays, empty), and on restart the
+  active tab keeps any chat saved in more than one tab.
+
 ## 0.2.10 — Local activation candidate
 
 - Rename a workspace tab by double-clicking it. Enter or clicking away saves,

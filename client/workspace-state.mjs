@@ -410,6 +410,19 @@ export function createWorkspaceState({
       signal.addEventListener("abort", release, { once: true });
       return release;
     },
+    /**
+     * Another tab now shows these chats. A chat's composer editor binds to one
+     * DOM root, so a second mounted copy would leave the other one inert: empty
+     * these panes (keeping the layout) instead. No undo, no navigation.
+     * @param {string[]} sessionIds
+     */
+    release(sessionIds) {
+      let tree = snapshot.tree;
+      for (const leaf of leaves(tree))
+        if (sessionIds.includes(leaf.sessionId))
+          tree = setLeafSession(tree, leaf.id, null);
+      if (tree !== snapshot.tree) publish({ tree });
+    },
     /** Tab switch: show this tab's focused chat; never adopt the previous tab's. */
     activate() {
       if (disposed || !isActive()) return;

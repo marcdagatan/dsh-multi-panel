@@ -1212,6 +1212,29 @@ describe("workspace selection and navigation", () => {
     }
   });
 
+  it("releasing a chat shown in another tab empties its pane without undo or navigation", () => {
+    const f = fixture();
+    try {
+      const a = paneFor(f.state, "a");
+      f.state.split(a.id, "b", "right");
+      f.state.dismissUndo(f.state.getSnapshot().undo);
+      const b = paneFor(f.state, "b");
+      const navigations = f.navigationCalls.length;
+      f.state.release(["b", "missing"]);
+      assert.deepEqual(
+        leaves(f.state.getSnapshot().tree).map((pane) => pane.id),
+        [a.id, b.id],
+        "pane layout is kept",
+      );
+      assert.deepEqual(sessionsIn(f.state), ["a", null]);
+      assert.equal(f.state.getSnapshot().undo, null);
+      assert.equal(f.navigationCalls.length, navigations);
+      assertReferenceOwnership(f);
+    } finally {
+      f.state.dispose();
+    }
+  });
+
   it("dropping an existing chat moves its pane rather than creating a second composer", () => {
     const f = fixture();
     try {

@@ -88,3 +88,15 @@ test("pinned native fork preserves controller plugin ownership and rejects unsup
   assert.ok(!fork.includes("new ConversationController(ctx,"));
   assert.throws(() => buildConversationFork(native + "\n"), /SHA-256 mismatch/);
 });
+
+test("an unmounting composer copy never detaches the editor from a newer mount", () => {
+  const fork = buildConversationFork(native);
+  assert.ok(
+    fork.includes(
+      "if (editor.getRootElement() === el) editor.setRootElement(null);",
+    ),
+  );
+  assert.ok(
+    !fork.includes("return () => {\n\t\t\t\t\teditor.setRootElement(null);"),
+  );
+});

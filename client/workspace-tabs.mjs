@@ -1,4 +1,5 @@
 import { STORAGE_KEY } from "./workspace-state.mjs";
+import { leaves } from "./split-model.mjs";
 
 export const TABS_STORAGE_KEY = "dsh.multi-panel.tabs.v1";
 const DEFAULT_TAB = "default";
@@ -8,6 +9,15 @@ const cleanName = (value) =>
   typeof value === "string"
     ? value.trim().slice(0, MAX_NAME) || undefined
     : undefined;
+
+const shownIn = (workspace) => {
+  const tree = workspace.getSnapshot?.().tree;
+  return tree
+    ? leaves(tree)
+        .map((leaf) => leaf.sessionId)
+        .filter(Boolean)
+    : [];
+};
 
 // The first tab keeps the pre-tabs layout key so existing layouts carry over.
 const layoutKey = (tabId) =>
@@ -40,6 +50,10 @@ function readIndex(storage) {
  * from createWorkspace({storageKey, isActive, adoptMainView}). Switching tabs
  * never disposes a workspace, so chats in background tabs stay retained and
  * mounted; only closing a tab releases its chats (they keep running natively).
+ * A chat shows in at most one tab: each chat has one composer editor, and a
+ * second mounted copy would steal it, leaving the visible composer inert
+ * (typed text drawn over a placeholder that never hides). The tab that most
+ * recently showed a chat keeps it; at startup the active tab wins.
  */
 export function createWorkspaceTabs({
   storage,
@@ -50,6 +64,36 @@ export function createWorkspaceTabs({
   const saved = restore ? readIndex(storage) : null;
   let activeId = saved?.activeId ?? DEFAULT_TAB;
   const listeners = new Set();
+  const watched = new Map();
+
+  // Track a tab's shown chats; chats it newly shows leave every other tab.
+  // At startup (yieldToOthers) it instead drops chats an earlier tab holds.
+  function watch(tab, yieldToOthers = false) {
+    const entry = { workspace: tab.workspace, shown: new Set() };
+    const sync = () => {
+      const now = shownIn(entry.workspace);
+      const added = now.filter((sessionId) => !entry.shown.has(sessionId));
+      entry.shown = new Set(now);
+      for (const other of [...watched.values()]) {
+        if (other === entry) continue;
+        const duplicates = added.filter((sessionId) =>
+          other.shown.has(sessionId),
+        );
+        if (!duplicates.length) continue;
+        if (yieldToOthers) entry.workspace.release?.(duplicates);
+        else other.workspace.release?.(duplicates);
+      }
+    };
+    watched.set(tab.id, entry);
+    sync();
+    yieldToOthers = false;
+    entry.off = entry.workspace.subscribe?.(sync);
+  }
+
+  function unwatch(tabId) {
+    watched.get(tabId)?.off?.();
+    watched.delete(tabId);
+  }
 
   function open(tabId, adoptMainView, name) {
     return {
@@ -69,6 +113,9 @@ export function createWorkspaceTabs({
     ),
     activeId,
   };
+  const startup = snapshot.tabs.find((tab) => tab.id === activeId);
+  for (const tab of [startup, ...snapshot.tabs.filter((t) => t !== startup)])
+    watch(tab, true);
 
   function publish(tabs) {
     snapshot = { tabs, activeId };
@@ -107,6 +154,7 @@ export function createWorkspaceTabs({
     add() {
       const tabId = id();
       const tab = open(tabId, false);
+      watch(tab);
       activate(tabId, [...snapshot.tabs, tab]);
       return tabId;
     },
@@ -130,6 +178,7 @@ export function createWorkspaceTabs({
       if (index < 0 || snapshot.tabs.length < 2) return;
       const tab = snapshot.tabs[index];
       const tabs = snapshot.tabs.filter((other) => other !== tab);
+      unwatch(tabId);
       tab.workspace.dispose();
       try {
         storage?.removeItem(layoutKey(tabId));
@@ -142,6 +191,7 @@ export function createWorkspaceTabs({
     },
     dispose() {
       listeners.clear();
+      for (const tabId of [...watched.keys()]) unwatch(tabId);
       for (const tab of snapshot.tabs) tab.workspace.dispose();
     },
   };

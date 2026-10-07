@@ -7,7 +7,7 @@ import {
 } from "../client/workspace-tabs.mjs";
 import { STORAGE_KEY } from "../client/workspace-state.mjs";
 
-function fixture({ saved = {}, restore = true } = {}) {
+function fixture({ saved = {}, restore = true, shown = {} } = {}) {
   const values = { ...saved };
   const storage = {
     getItem: (key) => values[key] ?? null,
@@ -25,10 +25,37 @@ function fixture({ saved = {}, restore = true } = {}) {
     restore,
     id: () => `tab-${++nextId}`,
     createWorkspace(options) {
+      const listeners = new Set();
       const workspace = {
         options,
+        sessions: [...(shown[options.storageKey] ?? [])],
+        released: [],
         activations: 0,
         disposed: false,
+        getSnapshot() {
+          return {
+            tree: {
+              type: "split",
+              first: { type: "leaf", sessionId: this.sessions[0] ?? null },
+              second: { type: "leaf", sessionId: this.sessions[1] ?? null },
+            },
+          };
+        },
+        subscribe(listener) {
+          listeners.add(listener);
+          return () => listeners.delete(listener);
+        },
+        show(...sessionIds) {
+          this.sessions.push(...sessionIds);
+          for (const listener of [...listeners]) listener();
+        },
+        release(sessionIds) {
+          this.released.push(...sessionIds);
+          this.sessions = this.sessions.filter(
+            (id) => !sessionIds.includes(id),
+          );
+          for (const listener of [...listeners]) listener();
+        },
         activate() {
           this.activations += 1;
         },
@@ -182,5 +209,48 @@ describe("workspace tabs", () => {
     assert.equal(calls, 1);
     f.tabs.dispose();
     assert.ok(f.created.every((workspace) => workspace.disposed));
+  });
+});
+
+describe("one chat per app across tabs", () => {
+  it("showing a chat in one tab releases it from every other tab", () => {
+    const f = fixture();
+    const [first] = f.created;
+    first.show("x", "y");
+    f.tabs.add();
+    const second = f.created[1];
+    second.show("x");
+    assert.deepEqual(first.released, ["x"]);
+    assert.deepEqual(first.sessions, ["y"]);
+    assert.deepEqual(second.sessions, ["x"]);
+    assert.deepEqual(second.released, []);
+  });
+
+  it("restored duplicates stay in the active tab and leave the others", () => {
+    const f = fixture({
+      saved: {
+        [TABS_STORAGE_KEY]: JSON.stringify({
+          tabs: ["default", "games"],
+          activeId: "games",
+        }),
+      },
+      shown: {
+        [STORAGE_KEY]: ["x", "y"],
+        [`${STORAGE_KEY}:games`]: ["x"],
+      },
+    });
+    const [projects, games] = f.created;
+    assert.deepEqual(projects.sessions, ["y"]);
+    assert.deepEqual(games.sessions, ["x"]);
+  });
+
+  it("closing a tab stops watching it", () => {
+    const f = fixture();
+    f.tabs.add();
+    const [first, second] = f.created;
+    f.tabs.close("tab-1");
+    second.show("x");
+    first.show("x");
+    assert.deepEqual(second.released, []);
   });
 });

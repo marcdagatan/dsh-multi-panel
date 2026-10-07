@@ -58,6 +58,13 @@ export function buildConversationFork(source) {
 				}), "multi-panel: startup preferences");
 			});`,
   );
+  // A chat's editor binds one DOM root. If a pane remount briefly overlaps the
+  // old copy, the old copy's cleanup must not detach the editor from the new one.
+  result = replaceOnce(
+    result,
+    "\t\t\t\teditor.setRootElement(el);\n\t\t\t\treturn () => {\n\t\t\t\t\teditor.setRootElement(null);",
+    "\t\t\t\teditor.setRootElement(el);\n\t\t\t\treturn () => {\n\t\t\t\t\tif (editor.getRootElement() === el) editor.setRootElement(null);",
+  );
   result = replaceOnce(
     result,
     '"attachment.dropTitle": "Drag files or images here to add them",',

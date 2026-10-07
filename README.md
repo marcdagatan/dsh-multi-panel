@@ -1,81 +1,287 @@
-# Multi-panel chats for DeepSeek Harness
+<a id="readme-top"></a>
 
-Native chat workspaces with nested horizontal and vertical splits. Each pane keeps its own chat, native Chat/Trajectory/Usage/MCPs views, composer, approvals and sidebar tabs. One shared session-list sidebar remains on the left.
+<div align="center">
 
-An independent community plugin, not an official DeepSeek product. Currently pinned to **DSH 0.2.0-rc.2**.
+# DSH Multi-panel
 
-## Use
+**Split your workspace. Keep each chat independent.**
 
-- Click **Split** in a pane, choose Above/Below/Left/Right, then an existing chat or **New chat**. New chat creates a distinct native session in the originating chat's workspace; it never shares another pane's blank composer.
-- Drag a chat from the session list, or the grip beside a pane title, onto another pane's edge. The highlighted half shows the exact split. The center is not a split target; Escape cancels the preview.
-- Drag a divider to resize; focused dividers also accept the corresponding arrow keys.
-- Click a pane to focus it. Session-list navigation and native global shortcuts target that focused pane.
-- In a focused new chat, use the native agent-mode dropdown beside the workspace picker to choose Standard, PTC, Creator, or any installed agent preset before sending. Selection belongs to that chat; native Developer tools visibility and started-chat restrictions remain unchanged.
-- Drop files into the intended chat pane. While dragging, that pane gets a light overlay tint and **Drop files in this chat** label, with no file-drop borders—even with the normal focus highlight turned off. Blocked drops show the native unavailable message with an error-colored tint. Feedback follows the file target, clears on leaving/dropping, and never changes keyboard focus. Only the target pane receives files; drops outside the chat panes do not attach to any chat.
-- Use **Maximize**, **Restore**, **Close pane**, or **Undo layout change**. Undo appears for 3 seconds with a shrinking countdown bar; another layout change restarts the countdown. Closing a pane does not archive the chat or stop an agent.
-- Open a chat's right sidebar normally. Right-click a sidebar tab for **Split to left/right/above/below**, or drag a tab onto another sidebar pane's edge. Sidebar splits, widths and fullscreen are local to their owning chat.
+Native chat panes and docked sidebar tabs for DeepSeek Harness.
 
-Selecting a chat already visible focuses its existing pane. Dropping it moves that pane; the same session is not duplicated, because the native composer and browser-tab ownership are session-scoped.
+![Supported DSH: 0.2.0-rc.2 only; plugin code: MIT with bundled third-party notices; release candidate: 0.2.7](docs/media/badges.svg)
 
-Layouts and widths are saved in this browser. Invalid, removed or ephemeral blank chat references restore as empty panes. The safety bounds are 64 chat panes / 32 nested split levels and 16 docked sidebar panes per chat; practical space and the native minimum-size rules determine which sidebar splits are available.
+[Install](#install) · [Quick Start](#quick-start) · [Features](#features) · [Demos](#demos) · [Settings](#settings) · [Rollback](#rollback)
 
-## Settings
+</div>
 
-Open **Settings → Multi-panel**. There are 25 profile-wide preferences, with extra appearance and behavior controls under **Advanced**:
+[![Six native chat panes in a full nested workspace with a docked browser, pane rearrangement, and divider resizing](docs/media/complex-layouts.gif)](docs/media/complex-layouts.mp4)
 
-- Focus highlight (off by default), highlight color/thickness, neutral borders, inactive opacity, divider hit area, compact toolbar and titles.
-- Undo duration (3 seconds), countdown bar, position, enable/disable, and optional pause while hovered or keyboard-focused.
-- Default chat split direction, new pane's share (0.5 is 50/50), minimum width/height, pane limit and whether new panes take focus.
-- Sidebar default width, minimum width, default split direction, new pane's share and per-chat pane limit. Manually resized per-session widths take precedence over the default.
-- Restore the last layout on startup (on). This option applies on the next page load; changing limits never closes existing chats.
+<p align="center">
+  Full workspace: six native chat panes, nested splits and a docked browser.<br>
+  Drag to rearrange; resize dividers.<br>
+  <a href="docs/media/complex-layouts.mp4">Watch the MP4</a> · <a href="docs/media/complex-layouts.png">Open the still preview</a>
+</p>
 
-Settings use DSH's native Host settings storage and update open panes without replacing their composers. **Reset multi-panel settings** resets only this feature's fields, not native composer or other plugin preferences. Numeric edits save when you leave the field or press Enter; Escape cancels the edit.
+Keep several chats visible without giving up DSH's native composers, approvals,
+Chat/Trajectory/Usage/MCPs views, or sidebar tools. Each pane owns its chat;
+one shared session list stays on the left.
 
-For the eight pane commands, open **Settings → General → Edit shortcuts** and search **Multi-panel**. Assign split/default/right/below, focus next/previous, maximize/restore, close pane, and Undo keys there. These commands are unbound by default to preserve existing shortcuts. Split shortcuts create a fresh blank native chat; closing a pane does not stop or archive its chat. Pane commands do not run while a settings/dialog modal is open.
+> [!WARNING]
+> This independent community plugin supports **DSH 0.2.0-rc.2 only**. It replaces
+> three native presentation owners: do not re-enable those owners while
+> Multi-panel is enabled or bypass compatibility checks. It is not an official
+> DeepSeek product.
 
-Minimum chat sizes default to 0 (flexible, preserving existing behavior). Nonzero sizes prevent splits that cannot fit and constrain divider dragging and keyboard resizing. A shrinking window never destroys mounted chats or drafts.
+## Features
 
-## Installation and rollback
+| Feature                     | What You Get                                                                             |
+| --------------------------- | ---------------------------------------------------------------------------------------- |
+| **Split in Any Direction**  | Nest horizontal and vertical chat splits; add an existing chat or a new native session.  |
+| **Drag to Arrange**         | Move chats from the session list or pane-title grip onto a pane's edge.                  |
+| **Native Chat Tools**       | Keep each chat's composer, approvals, native views, and available agent presets.         |
+| **Dock Sidebar Tabs**       | Split a chat's sidebar left, right, above, or below; keep its layout local to that chat. |
+| **Targeted File Drops**     | Drop files into the intended chat, with clear pane-specific feedback.                    |
+| **Layout Controls**         | Resize, maximize, restore, close a pane, or undo a layout change.                        |
+| **Remember Your Workspace** | Save layout and widths in this browser; tune 25 profile-wide preferences.                |
 
-This package is pinned to DSH **0.2.0-rc.2**. It replaces the native conversation, right-sidebar and attachment presentation owners, preserving their services, extension slots and image rendering. Builds refuse changed native artifact hashes. It does not edit the installed desktop application and does not use iframes or run a replacement server.
+## Demos
 
-Install and enable the built package with the Harness plugin manager. Its bundle disables only `include:ui-conversation`, `include:ui-sidebar-right` and `include:ui-attachment` while the combined replacement is enabled, so the native slots have exactly one owner at startup. Keep the browser element-context extension, Usage/MCP dashboards, terminal/files/document providers and iOS integration enabled as before. Restart DSH after installing an updated bundle, then refresh/reconnect the existing GUI if needed. Do not override the original owners back on while this replacement is enabled.
+Real desktop-recording excerpts. Open an MP4 for the higher-quality video,
+a GIF for a quick preview, or a still image for a closer look.
 
-Rollback: disable `dsh-multi-panel`, re-enable those three native entries, then restart DSH and reconnect. The native sidebar persistence namespace is read as a fallback but never overwritten by this package. Chats and their logs are untouched.
+<table>
+  <tr>
+    <td width="50%" align="center">
+      <a href="docs/media/complex-layouts.png"><img src="docs/media/complex-layouts.png" alt="Full workspace with six native chat panes, nested splits, and a docked browser region" width="100%"></a><br>
+      <b>Complex Layouts</b><br>
+      Six native chat panes and a docked browser.<br>
+      <a href="docs/media/complex-layouts.mp4">MP4</a> · <a href="docs/media/complex-layouts.gif">GIF</a> · <a href="docs/media/complex-layouts.png">Still</a>
+    </td>
+    <td width="50%" align="center">
+      <a href="docs/media/rearrange-panes.png"><img src="docs/media/rearrange-panes.png" alt="Nested native chat workspace from the pane rearrangement excerpt" width="100%"></a><br>
+      <b>Rearrange Panes</b><br>
+      Drag a chat to an edge; reflow nested panes.<br>
+      <a href="docs/media/rearrange-panes.mp4">MP4</a> · <a href="docs/media/rearrange-panes.gif">GIF</a> · <a href="docs/media/rearrange-panes.png">Still</a>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <a href="docs/media/split-panes.png"><img src="docs/media/split-panes.png" alt="Two blank native chat panes after the split-direction menu excerpt" width="100%"></a><br>
+      <b>Basic Split</b><br>
+      Direction menu, then a cut to two native chats and divider resizing.<br>
+      <a href="docs/media/split-panes.mp4">MP4</a> · <a href="docs/media/split-panes.gif">GIF</a> · <a href="docs/media/split-panes.png">Still</a>
+    </td>
+    <td width="50%" align="center">
+      <a href="docs/media/settings.png"><img src="docs/media/settings.png" alt="Multi-panel preferences in the native DSH settings window" width="100%"></a><br>
+      <b>Settings</b><br>
+      Native preferences and Advanced controls.<br>
+      <a href="docs/media/settings.mp4">MP4</a> · <a href="docs/media/settings.gif">GIF</a> · <a href="docs/media/settings.png">Still</a>
+    </td>
+  </tr>
+</table>
 
-Local directory installs may be cached by pnpm; for updates, pack a versioned tarball and install that exact tarball instead of reinstalling the same directory specifier.
+## Install
 
-## Development
+**Not published yet.** Version 0.2.7 is the current release candidate, not an npm
+release. The package is currently named `dsh-multi-panel`; a scoped npm name
+will be confirmed before publication.
 
-Prerequisites: **Node.js 22 or newer**, **pnpm 11.7.0**, **Python 3**, and the supported **DSH 0.2.0-rc.2 desktop installation**. React is provided by DSH in production; the development dependencies support the build and tests.
+For now, build a local tarball and install it through DSH's plugin manager.
+A source checkout alone is not installable: it needs artifacts extracted from
+the supported desktop application.
 
-Run these commands from this plugin's repository root:
+**Build prerequisites:** Node.js 22+, pnpm 11.7.0, Python 3, and the supported
+DSH desktop installation.
+
+From this repository's root:
 
 ```sh
 pnpm install --frozen-lockfile --ignore-scripts
 python3 scripts/extract-runtime.py --asar "/Applications/DeepSeek Harness.app/Contents/Resources/app.asar"
-pnpm run build
-pnpm test
-pnpm run format:check
 pnpm pack
 ```
 
-Use `--asar` to supply the application archive's path on another installation. On macOS, the extractor defaults to the path shown above. It reads selected artifacts into the project-local `runtime-evidence` directory; it does not modify the installed application. A different runtime fails the build's SHA-256 checks rather than silently producing an incompatible plugin.
+On another installation, set `--asar` to its application archive. On macOS, the
+extractor defaults to the path shown above. Extraction reads selected files into
+local `runtime-evidence`; it does not modify DSH. Packaging runs the build, full
+tests, and formatting checks. Changed native artifact hashes fail the build's
+SHA-256 checks instead of silently producing an incompatible plugin.
 
-The docking builtin lives in the pinned Web shell bundle, not a separate package artifact. The build embeds narrowly patched native owners and an internal all-axis dockkit fork. Generated output lives in `lib`; neither generated output nor runtime extraction is committed. A fresh clone therefore requires extraction before building or running the full test suite.
+1. Open DSH's plugin manager and install the generated, versioned tarball.
+2. Enable the `dsh-multi-panel` bundle. It disables only
+   `include:ui-conversation`, `include:ui-sidebar-right`, and `include:ui-attachment`,
+   leaving exactly one owner for each native slot at startup.
+3. Restart DSH, then refresh or reconnect your existing GUI if needed.
 
-Without the desktop artifacts, run `pnpm run test:portable` and `pnpm run format:check`. GitHub Actions runs these portable checks; they do **not** replace native integration verification. `pnpm pack` runs build, full tests and formatting first. See [CONTRIBUTING.md](CONTRIBUTING.md) and [RELEASING.md](RELEASING.md) for contribution and release steps.
+Keep other native integrations enabled. For updates, install the exact new
+versioned tarball: pnpm may cache repeated local-directory installs.
 
-### Why the panes are flat
+## Quick Start
 
-The split trees describe geometry, not the React component hierarchy. Chat leaves and native dockkit tab hosts stay keyed under a stable parent. Moving/splitting/resizing changes their rectangles without remounting editors, scroll containers or browser/terminal bodies. A pane's explicit native SessionProvider resolves its retained session independently of the globally selected chat.
+1. **Add a pane.** Click **Split**, choose Above/Below/Left/Right, then select
+   an existing chat or **New chat**.
+2. **Arrange chats.** Drag a session-list chat or pane-title grip onto another
+   pane's edge. The highlighted half previews the split; Escape cancels.
+3. **Resize and focus.** Drag a divider and click a pane to focus it. Native
+   global shortcuts and session-list navigation target the focused pane.
+4. **Arrange sidebar tools.** Open the chat's right sidebar. Right-click a tab
+   for **Split to left/right/above/below**, or drag it onto a sidebar pane's edge.
+5. **Make room.** Use **Maximize**, **Restore**, **Close pane**, or
+   **Undo layout change**. Closing a pane does not archive its chat or stop its agent.
 
-### Verification
+Selecting an already visible chat focuses its existing pane. Dragging it moves
+that pane rather than duplicating the session: native composer and browser-tab
+ownership are session-scoped.
 
-Deterministic Node and React/jsdom checks cover split validation/operations, session-reference ownership and reentrant navigation, scoped tabs/drafts, all-axis native sidebar planning, persistence, and stable DOM identity while moving/resizing/hiding panes. Manual verification uses the existing GUI and a task-owned browser session; it does not create an E2E test suite. Native desktop guest behavior should also be checked on the actual desktop surface, not inferred from browser-only tests.
+<details>
+<summary><b>Everyday Behavior and Layout Limits</b></summary>
 
-## License
+- **New chats and agent modes:** New chat creates a distinct native session in
+  the originating chat's workspace, never sharing another pane's blank composer.
+  In a focused new chat, use the native agent-mode dropdown beside the workspace
+  picker to choose Standard, PTC, Creator, or an installed preset before sending.
+  Selection belongs to that chat; native Developer tools visibility and
+  started-chat restrictions still apply.
+- **File intake:** Only the target chat receives dropped files. A light tint
+  and **Drop files in this chat** label identify it, even when the normal focus
+  highlight is off. There are no file-drop borders. Blocked targets show the
+  native unavailable message with an error-colored tint. Feedback follows the
+  target, clears on leaving or dropping, and does not change keyboard focus.
+  Drops outside chats do not attach files anywhere.
+- **Keyboard resizing:** Focus a divider and use the corresponding arrow keys.
+  A pane's center is not a split target.
+- **Undo:** The notice lasts 3 seconds by default with a shrinking countdown
+  bar. Another layout change restarts it; duration and hover/focus pause are configurable.
+- **Local sidebar layouts:** Splits, widths, and fullscreen belong to their
+  owning chat. Manually resized per-session widths override the default.
+- **Restore:** Invalid, removed, or ephemeral blank chat references return as
+  empty panes. Layout and widths are saved in this browser, not across browsers.
+- **Bounds:** Safety limits are 64 chat panes, 32 nested split levels, and
+  16 docked sidebar panes per chat. Available space and native minimum-size rules
+  determine which sidebar splits are possible. Chat minimum sizes default to 0
+  for flexible sizing; nonzero values prevent splits that cannot fit and constrain
+  divider dragging and keyboard resizing. A shrinking window never destroys
+  mounted chats or drafts, and changing limits never closes existing chats.
 
-Plugin-authored code is MIT-licensed. The generated bundle also contains modified native DSH code and third-party modules with their own notices. See [LICENSE](LICENSE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Preserve the bundled notices when redistributing.
+</details>
 
-See [CHANGELOG.md](CHANGELOG.md) for version history.
+## Settings
+
+Open **Settings → Multi-panel** for **25 profile-wide preferences**.
+Extra appearance and behavior controls are under **Advanced**.
+
+<table>
+  <tr>
+    <td width="50%" align="center">
+      <a href="docs/media/settings.png"><img src="docs/media/settings.png" alt="Multi-panel settings controls in the native DSH settings window" width="100%"></a><br>
+      <b>Main Preferences</b>
+    </td>
+    <td width="50%" align="center">
+      <a href="docs/media/settings-advanced.png"><img src="docs/media/settings-advanced.png" alt="Advanced Multi-panel controls in the native DSH settings window" width="100%"></a><br>
+      <b>Advanced Controls</b>
+    </td>
+  </tr>
+</table>
+
+| Group      | Controls                                                                                                                            |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Appearance | Focus highlight (off by default), color/thickness, neutral borders, inactive opacity, divider hit area, compact toolbar and titles. |
+| Undo       | Duration (3 seconds by default), countdown bar, position, enable/disable, and hover or keyboard-focus pause.                        |
+| Chat Panes | Default split direction, new pane's share (0.5 = 50/50), minimum width/height, pane limit, and whether new panes take focus.        |
+| Sidebars   | Default/minimum width, split direction, new pane's share, and per-chat pane limit.                                                  |
+| Restore    | Restore the last layout on startup (on by default); changes apply on the next page load.                                            |
+
+Preferences use native DSH Host storage and update open panes without replacing
+composers. **Reset multi-panel settings** affects only this plugin's fields,
+not native composer or other plugin preferences. Numeric edits save when you
+leave the field or press Enter; Escape cancels.
+
+Watch the settings walkthrough in [Demos](#demos).
+
+### Keyboard Shortcuts
+
+Open **Settings → General → Edit shortcuts** and search **Multi-panel**.
+All **eight commands are unbound by default**, preserving your existing keys:
+
+| Layout                            | Navigation and History         |
+| --------------------------------- | ------------------------------ |
+| Split using the default direction | Focus next pane                |
+| Split to the right                | Focus previous pane            |
+| Split below                       | Undo layout change             |
+| Maximize or restore pane          | Close pane (keep chat running) |
+
+Split commands create a fresh blank native chat. Pane commands do not run while
+a settings/dialog modal is open.
+
+## Rollback
+
+1. Disable `dsh-multi-panel`.
+2. Re-enable `include:ui-conversation`, `include:ui-sidebar-right`, and `include:ui-attachment`.
+3. Restart DSH and reconnect the GUI.
+
+Chats and their logs are untouched. This plugin reads native sidebar persistence
+as a fallback but never overwrites that namespace.
+
+## Development
+
+<details>
+<summary><b>Build, Verification, and Native Ownership</b></summary>
+
+Use the extraction prerequisites in [Install](#install), then run:
+
+```sh
+pnpm run build
+pnpm test
+pnpm run format:check
+```
+
+Without the desktop artifacts, use `pnpm run test:portable` and
+`pnpm run format:check`. GitHub Actions runs portable checks; they do not replace
+native integration verification. Fresh checkouts require extraction before the
+full build/test suite. React is supplied by DSH in production; development
+dependencies support the build and tests.
+
+The build embeds narrowly patched native conversation, sidebar, and attachment
+owners and an internal all-axis dockkit fork. The docking builtin comes from the
+pinned Web shell bundle, not a standalone package artifact. Generated `lib` and
+extracted `runtime-evidence` are not committed. The plugin preserves native
+services, extension slots, and image rendering; it does not use iframes, edit the
+installed desktop application, or run a replacement server. Keep browser
+element-context, Usage/MCP dashboards, terminal/files/document providers, and
+iOS integration enabled.
+
+**Why panes stay flat:** Split trees describe geometry, not the React hierarchy.
+Chat leaves and native dockkit tab hosts stay keyed beneath a stable parent.
+Moving, splitting, and resizing change rectangles without remounting editors,
+scroll containers, or browser/terminal bodies. An explicit native SessionProvider
+resolves each retained session independently of the globally selected chat.
+
+**Verification:** Deterministic Node and React/jsdom checks cover split validation
+and operations, session-reference ownership and reentrant navigation, scoped
+tabs/drafts, all-axis native sidebar planning, persistence, and stable DOM identity
+while moving, resizing, or hiding panes. Manual verification uses the existing GUI
+and a task-owned browser session, not an E2E suite. Check native desktop guest
+behavior on the actual desktop surface; browser-only tests are not desktop evidence.
+
+See [Contributing](CONTRIBUTING.md) and [Releasing](RELEASING.md) for contribution
+boundaries and release checks.
+
+</details>
+
+## Contributing and License
+
+Bug reports should include plugin/DSH versions, operating system, a minimal
+reproduction, expected behavior, and actual behavior. Remove private content
+from logs and screenshots before sharing. See [Contributing](CONTRIBUTING.md)
+and the [Changelog](CHANGELOG.md).
+
+Plugin-authored code is MIT-licensed. Generated bundles include modified native
+DSH code and third-party modules under their own notices. Read [LICENSE](LICENSE)
+and [Third-Party Notices](THIRD_PARTY_NOTICES.md); preserve bundled notices when redistributing.
+
+<sub>Short desktop-recording excerpts. In the full-workspace clips, private chat content,
+the session list, titles, paths, and browser viewport content are covered with opaque
+editorial masks. Basic split and settings clips are cropped for privacy.
+See the <a href="docs/media/README.md">media editing notes</a>.</sub>
+
+[↑ Back to Top](#readme-top)

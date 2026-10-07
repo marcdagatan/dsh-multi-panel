@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="552" height="32" viewBox="0 0 552 32" role="img" aria-labelledby="title">
+  <title id="title">DSH 0.2.0-rc.2 · MIT with upstream notices · Release candidate</title>
+  <g font-family="Arial,Helvetica,sans-serif" font-size="13" text-anchor="middle">
+    <rect width="182" height="32" rx="8" fill="#1d2d45"/>
+    <text x="91" y="21" fill="#b9d7ff">DSH 0.2.0-rc.2</text>
+    <rect x="194" width="156" height="32" rx="8" fill="#17352d"/>
+    <text x="272" y="21" fill="#b1edcf">MIT + notices</text>
+    <rect x="362" width="190" height="32" rx="8" fill="#3b301c"/>
+    <text x="457" y="21" fill="#f1d9a2">0.2.7 release candidate</text>
+  </g>
+</svg>

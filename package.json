@@ -31,15 +31,17 @@
     "RELEASING.md",
     "LICENSE",
     "THIRD_PARTY_NOTICES.md",
-    "third-party-licenses"
+    "third-party-licenses",
+    "docs/media",
+    "docs/capture-prompt.md"
   ],
   "scripts": {
     "build": "node scripts/build.mjs",
     "test": "node --test test/*.test.mjs",
     "test:portable": "node --test test/split-model.test.mjs test/workspace-state.test.mjs test/preferences.test.mjs test/settings.test.mjs test/workspace.test.mjs test/shortcuts.test.mjs",
     "prepack": "pnpm run build && pnpm test && pnpm run format:check",
-    "format": "prettier --write client/*.mjs client/*.css client/*.md scripts/*.mjs test/*.test.mjs package.json README.md CHANGELOG.md CONTRIBUTING.md RELEASING.md THIRD_PARTY_NOTICES.md .github/workflows/*.yml",
-    "format:check": "prettier --check client/*.mjs client/*.css client/*.md scripts/*.mjs test/*.test.mjs package.json README.md CHANGELOG.md CONTRIBUTING.md RELEASING.md THIRD_PARTY_NOTICES.md .github/workflows/*.yml"
+    "format": "prettier --write client/*.mjs client/*.css client/*.md scripts/*.mjs test/*.test.mjs package.json README.md CHANGELOG.md CONTRIBUTING.md RELEASING.md THIRD_PARTY_NOTICES.md docs/*.md docs/media/*.md docs/media/*.json .github/workflows/*.yml",
+    "format:check": "prettier --check client/*.mjs client/*.css client/*.md scripts/*.mjs test/*.test.mjs package.json README.md CHANGELOG.md CONTRIBUTING.md RELEASING.md THIRD_PARTY_NOTICES.md docs/*.md docs/media/*.md docs/media/*.json .github/workflows/*.yml"
   },
   "dsh": {
     "bundle": {

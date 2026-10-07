@@ -1,0 +1,127 @@
+{
+  "source_recordings_committed": false,
+  "reference_viewport_width": 1920,
+  "cuts": {
+    "split-panes": {
+      "recording": "A",
+      "seconds": [
+        [28, 30],
+        [32, 35]
+      ],
+      "crop_xywh": [1260, 412, 660, 390]
+    },
+    "settings": {
+      "recording": "B",
+      "seconds": [[6, 15.4]],
+      "crop_xywh": [740, 195, 440, 433]
+    },
+    "complex-layouts": {
+      "recording": "A",
+      "seconds": [[43, 57]],
+      "crop_xywh": null,
+      "full_workspace": true
+    },
+    "rearrange-panes": {
+      "recording": "A",
+      "seconds": [[48, 54]],
+      "crop_xywh": null,
+      "full_workspace": true
+    }
+  },
+  "privacy": "Complex-layout and rearrangement clips retain full workspace geometry with opaque editorial covers for private chat/body/title/list/task/browser-page/address/path content. Basic split and settings are tightly cropped. No source audio or original metadata copied.",
+  "clips": {
+    "split-panes": {
+      "fps": 10,
+      "frames": 70,
+      "duration_seconds": 7.0
+    },
+    "settings": {
+      "fps": 10,
+      "frames": 114,
+      "duration_seconds": 11.4
+    },
+    "complex-layouts": {
+      "fps": 8,
+      "frames": 128,
+      "duration_seconds": 16.0,
+      "gif_duration_seconds": 16.0,
+      "mp4_dimensions": [1920, 916],
+      "gif_dimensions": [1280, 611],
+      "beginning_and_end_hold_seconds": [1, 1]
+    },
+    "rearrange-panes": {
+      "fps": 8,
+      "frames": 64,
+      "duration_seconds": 8.0,
+      "gif_duration_seconds": 8.0,
+      "mp4_dimensions": [1920, 916],
+      "gif_dimensions": [1280, 611],
+      "beginning_and_end_hold_seconds": [1, 1]
+    }
+  },
+  "files": {
+    "split-panes.png": {
+      "bytes": 97109,
+      "sha256": "f2c14a386c70bc767ee064c9d8734b5ded20f864427424b3782db46f171d89a7"
+    },
+    "split-panes.gif": {
+      "bytes": 425504,
+      "sha256": "52e0c6d555f624dfd25dba911d4f1df3f70ec6559a11cab520e0656ec8051d3e"
+    },
+    "split-panes.mp4": {
+      "bytes": 228370,
+      "sha256": "4f97fce461a6b785a16cd656839d16ac47e8620d0976d5b2df950614cc49103f"
+    },
+    "settings.png": {
+      "bytes": 182096,
+      "sha256": "037a8acb46524352c6696916b9df748e4f17ed69e375f5f12062968652d3dd75"
+    },
+    "settings.gif": {
+      "bytes": 2012223,
+      "sha256": "de4663991ce8324b38f746838cdcacf6d71df368552372c6374524b97ddd0403"
+    },
+    "settings.mp4": {
+      "bytes": 824214,
+      "sha256": "d75dfd4a19b93d13a4ead96ddd91108d2ae1014d6e240e79255a43f9d8ba4c3b"
+    },
+    "settings-advanced.png": {
+      "bytes": 145558,
+      "sha256": "202273b7cfd9fdbfd9adbed523092e2383a4139884ae66c53faa7498fd2f293a"
+    },
+    "complex-layouts.mp4": {
+      "bytes": 562391,
+      "sha256": "d34fadb7f8695ceb78ba652133239a0aa4247c334d1de4f86c952ffcd9eaaffa"
+    },
+    "complex-layouts.gif": {
+      "bytes": 731420,
+      "sha256": "b5d96eed47554c62c97b4ca20d324dfce1d2d81111f583c273aefae16d765e57"
+    },
+    "complex-layouts.png": {
+      "bytes": 158958,
+      "sha256": "d6c27777eb072059110148a843747b23aaa0c77607f40221330ddfde5fe5bc93"
+    },
+    "rearrange-panes.mp4": {
+      "bytes": 308920,
+      "sha256": "4c20bcca8f68b3722f6cebe2530cc96f295e2a9bea5fb9b713bdc2ee72396a4f"
+    },
+    "rearrange-panes.gif": {
+      "bytes": 233318,
+      "sha256": "f4449db86fcd235b4ba7970d9decd415aec6ebcbe57c5caac8222894865d4880"
+    },
+    "rearrange-panes.png": {
+      "bytes": 158320,
+      "sha256": "5cafd32c4eefd8e803d658f7d63905652be5242bf5f5405a62d28d42e6c8beaa"
+    }
+  },
+  "complex_layout_verification": {
+    "source_frames": 112,
+    "all_frame_contact_sheets": 7,
+    "known_private_label_ocr_matches": 0,
+    "all_recognized_text_reviewed": true,
+    "unexpected_browser_text_matches_after_fix": 0,
+    "commit_keyframe_source_seconds": 51.125,
+    "audio_tracks": 0,
+    "reviewed_geometry": "Inspected three-left-row geometry before 51.125s; measured shared-divider y on every later frame. Native pane controls and compositor pixels copied; no invented layouts.",
+    "geometry_count": "Six native chat panes plus one browser docked within a chat = seven visible regions; not seven chats."
+  }
+}

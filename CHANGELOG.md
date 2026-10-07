@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.2.10 — Local activation candidate
+
+- Rename a workspace tab by double-clicking it. Enter or clicking away saves,
+  Escape cancels, and clearing the name returns to the focused chat's title.
+  Names are saved with the tabs and restored on restart.
+
 ## 0.2.9 — Local activation candidate
 
 - Keep a chat's browser alive when you switch that pane to another chat. A

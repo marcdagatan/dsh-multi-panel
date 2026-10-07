@@ -4,11 +4,11 @@ This repository contains only the multi-panel plugin. Its source and build input
 
 ## Current candidate
 
-Version **0.2.9** is a local activation candidate. It keeps background chats' browser and terminal sidebars mounted behind their pane so switching chats no longer reloads the browser. Version 0.2.8 added workspace tabs with retained background chats and per-tab layouts, running-chat indicators, four unbound tab commands, and double-click divider equalization. No version tag, public GitHub release or npm publication is part of this local activation.
+Version **0.2.10** is a local activation candidate. It adds renaming workspace tabs. Version 0.2.9 keeps background chats' browser and terminal sidebars mounted behind their pane so switching chats no longer reloads the browser. Version 0.2.8 added workspace tabs with retained background chats and per-tab layouts, running-chat indicators, four unbound tab commands, and double-click divider equalization. No version tag, public GitHub release or npm publication is part of this local activation.
 
 Known limitation: duplicate existing-chat selection across workspace tabs is not prevented. Keep each chat in only one workspace tab; native composer and sidebar ownership remain session-scoped.
 
-The activation tarball uses a staging snapshot of the current compiled code, metadata and notices, plus the committed README and its verified four-demo media set. Its README version is updated to 0.2.9. Pending seven-demo README/media edits are not included; the source edits remain intact. The older recordings do not demonstrate workspace tabs or double-click equalization.
+The activation tarball uses a staging snapshot of the current compiled code, metadata and notices, plus the committed README and its verified four-demo media set. Its README version is updated to 0.2.10. Pending seven-demo README/media edits are not included; the source edits remain intact. The older recordings do not demonstrate workspace tabs or double-click equalization.
 
 Supported runtime: **DSH 0.2.0-rc.2** only. Other versions must be reviewed and validated before changing the pinned artifact hashes.
 

@@ -1,0 +1,80 @@
+{
+  "name": "dsh-multi-panel",
+  "version": "0.2.7",
+  "author": "Marc Uy Dagatan",
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "plugin",
+    "split-panes",
+    "workspace"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "pnpm@11.7.0",
+  "description": "Independent split chat workspaces and vertically or horizontally docked side-panel tabs for DSH",
+  "type": "module",
+  "license": "MIT",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "cordis.patch.yml",
+    "README.md",
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    "RELEASING.md",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md",
+    "third-party-licenses"
+  ],
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --test test/*.test.mjs",
+    "test:portable": "node --test test/split-model.test.mjs test/workspace-state.test.mjs test/preferences.test.mjs test/settings.test.mjs test/workspace.test.mjs test/shortcuts.test.mjs",
+    "prepack": "pnpm run build && pnpm test && pnpm run format:check",
+    "format": "prettier --write client/*.mjs client/*.css client/*.md scripts/*.mjs test/*.test.mjs package.json README.md CHANGELOG.md CONTRIBUTING.md RELEASING.md THIRD_PARTY_NOTICES.md .github/workflows/*.yml",
+    "format:check": "prettier --check client/*.mjs client/*.css client/*.md scripts/*.mjs test/*.test.mjs package.json README.md CHANGELOG.md CONTRIBUTING.md RELEASING.md THIRD_PARTY_NOTICES.md .github/workflows/*.yml"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-api-session-controller",
+        "@deepseek-ai/dsh-client-file-upload",
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-layout",
+        "@deepseek-ai/dsh-client-ui-renderer",
+        "@deepseek-ai/dsh-client-ui-session",
+        "@deepseek-ai/dsh-client-ui-settings",
+        "@deepseek-ai/dsh-client-ui-workspace",
+        "@deepseek-ai/dsh-client-resources",
+        "@deepseek-ai/dsh-client-shortcuts"
+      ]
+    }
+  },
+  "dependencies": {
+    "@deepseek-ai/schemastery": "~3.18.4"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "~4.0.4",
+    "@deepseek-ai/dsh-client-ui-conversation": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-client-ui-sidebar-right": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-client-ui-attachment": "0.2.0-rc.2"
+  },
+  "devDependencies": {
+    "acorn": "^8.15.0",
+    "prettier": "^3.6.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "jsdom": "^26.1.0"
+  }
+}

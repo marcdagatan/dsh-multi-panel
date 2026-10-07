@@ -1,0 +1,11 @@
+# These presentation owners are mutually exclusive with the combined fork.
+# Keep the replacement contract in the bundle, not just transient live toggles.
+- id: ui-conversation
+  disabled: true
+- id: ui-sidebar-right
+  disabled: true
+- id: ui-attachment
+  disabled: true
+- insert:
+    - id: multi-panel
+      name: dsh-multi-panel

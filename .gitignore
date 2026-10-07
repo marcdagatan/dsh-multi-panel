@@ -1,0 +1,26 @@
+# Installed dependencies and local native-runtime extraction
+node_modules/
+runtime-evidence/
+.cache/
+__pycache__/
+*.py[cod]
+
+# Generated bundles and release archives (published as release assets, not source)
+lib/
+release/
+*.tgz
+
+# Local QA records include personal paths and session/sidebar screenshots
+HANDOFF.md
+/*.png
+scripts/authenticate-ui.mjs
+scripts/qa-page-plugin.mjs
+scripts/sidebar-dependencies.txt
+scripts/sidebar-dockkit-evidence.txt
+
+# Credentials, logs and operating-system files
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store

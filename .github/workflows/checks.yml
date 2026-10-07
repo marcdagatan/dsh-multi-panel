@@ -1,0 +1,32 @@
+name: Source checks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  portable:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install locked dependencies without scripts
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Check formatting
+        run: pnpm run format:check
+      - name: Check the extractor syntax
+        run: python3 -m py_compile scripts/extract-runtime.py
+      - name: Run portable tests
+        run: pnpm run test:portable
+      # Full native integration checks need the pinned DSH desktop ASAR.
+      # Maintainers run them locally before packaging; see RELEASING.md.

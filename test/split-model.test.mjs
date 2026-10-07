@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 
 import {
   edgeAt,
+  equalizedRatios,
   findLeaf,
   leaves,
   moveLeaf,
@@ -590,5 +591,45 @@ describe("edge previews", () => {
     ]) {
       assert.equal(edgeAt(...args), null);
     }
+  });
+});
+
+describe("equalizing splits", () => {
+  it("evens every pane in the same-axis run the divider belongs to", () => {
+    const tree = freezeTree(
+      split(
+        "root",
+        leaf("a"),
+        split("nested", leaf("b"), leaf("c"), "horizontal", 0.8),
+        "horizontal",
+        0.7,
+      ),
+    );
+    for (const id of ["root", "nested"]) {
+      assert.deepEqual(equalizedRatios(tree, id), [
+        ["root", 1 / 3],
+        ["nested", 0.5],
+      ]);
+    }
+  });
+
+  it("treats a cross-axis child as one pane and leaves its inner splits alone", () => {
+    const tree = freezeTree(
+      split(
+        "root",
+        split("upper", leaf("a"), leaf("b"), "horizontal", 0.3),
+        split("row", leaf("c"), leaf("d"), "horizontal", 0.2),
+        "vertical",
+        0.6,
+      ),
+    );
+    assert.deepEqual(equalizedRatios(tree, "root"), [["root", 0.5]]);
+    assert.deepEqual(equalizedRatios(tree, "row"), [["row", 0.5]]);
+  });
+
+  it("returns nothing for leaves and missing IDs", () => {
+    const tree = freezeTree(split("root", leaf("a"), leaf("b")));
+    assert.deepEqual(equalizedRatios(tree, "a"), []);
+    assert.deepEqual(equalizedRatios(tree, "missing"), []);
   });
 });

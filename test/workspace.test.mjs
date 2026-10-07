@@ -528,3 +528,23 @@ test("divider keyboard controls use the correct axis and clamp ratios without un
     ui.cleanup();
   }
 });
+
+test("double-clicking a divider evens out the panes it separates", () => {
+  const ui = fixture();
+  try {
+    const first = ui.workspace.getSnapshot().activeId;
+    act(() => ui.workspace.split(first, "b", "right"));
+    act(() => ui.workspace.resize(ui.workspace.getSnapshot().tree.id, 0.7));
+    const divider = ui.container.querySelector('[role="separator"]');
+    act(() =>
+      divider.dispatchEvent(
+        new ui.container.ownerDocument.defaultView.MouseEvent("dblclick", {
+          bubbles: true,
+        }),
+      ),
+    );
+    assert.equal(ui.workspace.getSnapshot().tree.ratio, 0.5);
+  } finally {
+    ui.cleanup();
+  }
+});

@@ -5,6 +5,7 @@ import {
   removeLeaf,
   moveLeaf,
   resizeSplit,
+  equalizedRatios,
   setLeafSession,
   validateLayout,
 } from "./split-model.mjs";
@@ -306,9 +307,10 @@ export function createWorkspaceState({
     splitId,
     width = viewport.width,
     height = viewport.height,
+    tree = snapshot.tree,
   ) {
     const allocation = allocationFor(
-      snapshot.tree,
+      tree,
       splitId,
       Number.isFinite(width) && width >= 0 ? width : viewport.width,
       Number.isFinite(height) && height >= 0 ? height : viewport.height,
@@ -566,6 +568,17 @@ export function createWorkspaceState({
       if (!bounds) return;
       const bounded = Math.max(bounds.min, Math.min(bounds.max, ratio));
       const nextTree = resizeSplit(snapshot.tree, splitId, bounded);
+      if (nextTree !== snapshot.tree) publish({ tree: nextTree });
+    },
+    /** Even out the divider's same-axis run in one layout change. */
+    equalize(splitId) {
+      let nextTree = snapshot.tree;
+      for (const [id, ratio] of equalizedRatios(nextTree, splitId)) {
+        const bounds = getResizeBounds(id, undefined, undefined, nextTree);
+        if (!bounds) continue;
+        const bounded = Math.max(bounds.min, Math.min(bounds.max, ratio));
+        nextTree = resizeSplit(nextTree, id, bounded);
+      }
       if (nextTree !== snapshot.tree) publish({ tree: nextTree });
     },
     maximize(paneId) {

@@ -143,6 +143,43 @@ export function resizeSplit(tree, id, ratio) {
   );
 }
 
+// A run is a chain of same-axis splits; it renders as one row or column.
+function runLength(node, axis) {
+  return node.type === "split" && node.axis === axis
+    ? runLength(node.first, axis) + runLength(node.second, axis)
+    : 1;
+}
+
+function runRatios(node, axis) {
+  if (node.type !== "split" || node.axis !== axis) return [];
+  const first = runLength(node.first, axis);
+  return [
+    [node.id, first / (first + runLength(node.second, axis))],
+    ...runRatios(node.first, axis),
+    ...runRatios(node.second, axis),
+  ];
+}
+
+/**
+ * Ratios that give every pane in the split's same-axis run an equal share, so
+ * nested columns read as equal thirds rather than 50/25/25. Cross-axis
+ * children count as one pane and keep their own ratios. Parent-first order;
+ * leaves and missing IDs return []. Callers clamp with resizeSplit.
+ * @param {Node} tree
+ * @param {string} id
+ * @returns {Array<[string, number]>}
+ */
+export function equalizedRatios(tree, id) {
+  function runTop(node, top) {
+    if (node.type === "leaf") return null;
+    const current = top?.axis === node.axis ? top : node;
+    if (node.id === id) return current;
+    return runTop(node.first, current) ?? runTop(node.second, current);
+  }
+  const top = runTop(tree, null);
+  return top ? runRatios(top, top.axis) : [];
+}
+
 /**
  * @param {Node} tree
  * @param {string} id

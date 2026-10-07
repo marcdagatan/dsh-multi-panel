@@ -150,6 +150,8 @@ ownership are session-scoped.
   Drops outside chats do not attach files anywhere.
 - **Keyboard resizing:** Focus a divider and use the corresponding arrow keys.
   A pane's center is not a split target.
+- **Equal sizes:** Double-click a divider to give every pane in that row or
+  column the same width or height. Other rows and columns keep their sizes.
 - **Undo:** The notice lasts 3 seconds by default with a shrinking countdown
   bar. Another layout change restarts it; duration and hover/focus pause are configurable.
 - **Local sidebar layouts:** Splits, widths, and fullscreen belong to their

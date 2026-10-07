@@ -76,6 +76,7 @@ function SplitDivider({
   divider,
   size,
   onResize,
+  onEqualize,
   bounds = { min: 0.15, max: 0.85 },
 }) {
   const horizontal = divider.axis === "horizontal";
@@ -124,6 +125,7 @@ function SplitDivider({
       event.currentTarget.setPointerCapture(event.pointerId);
     },
     onPointerMove: resize,
+    onDoubleClick: () => onEqualize?.(divider.id),
     onPointerUp(event) {
       pointer.current = null;
       if (event.currentTarget.hasPointerCapture(event.pointerId))
@@ -607,6 +609,7 @@ export function MultiWorkspace({
                 size.height,
               ) ?? undefined,
             onResize: workspace.resize,
+            onEqualize: workspace.equalize,
           }),
         )
       : null,

@@ -519,6 +519,37 @@ describe("workspace native new chats", () => {
 });
 
 describe("workspace configurable split behavior", () => {
+  it("equalize evens the divider's same-axis panes in one layout change", () => {
+    const tree = split(
+      "root",
+      leaf("first", "a"),
+      split(
+        "nested",
+        leaf("second", "b"),
+        leaf("third", "c"),
+        "horizontal",
+        0.8,
+      ),
+      "horizontal",
+      0.7,
+    );
+    const f = fixture({ saved: { tree, activeId: "first" } });
+    try {
+      let publishes = 0;
+      f.state.subscribe(() => publishes++);
+      f.state.equalize("nested");
+      const next = f.state.getSnapshot().tree;
+      assert.equal(next.ratio, 1 / 3);
+      assert.equal(next.second.ratio, 0.5);
+      assert.equal(publishes, 1);
+      f.state.equalize("nested");
+      f.state.equalize("missing");
+      assert.equal(publishes, 1);
+    } finally {
+      f.state.dispose();
+    }
+  });
+
   it("defaults retain flexible resize bounds without requiring viewport measurements", () => {
     const f = fixture();
     try {

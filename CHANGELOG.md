@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Double-click a divider to equalize the panes in its row or column.
+
 ## 0.2.7 — Public-release preparation
 
 - Prepare a standalone source repository and reproducible build instructions.

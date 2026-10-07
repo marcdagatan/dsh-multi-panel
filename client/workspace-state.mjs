@@ -11,7 +11,7 @@ import {
 
 import { DEFAULT_PREFERENCES, normalizePreferences } from "./preferences.mjs";
 
-const STORAGE_KEY = "dsh.multi-panel.layout.v1";
+export const STORAGE_KEY = "dsh.multi-panel.layout.v1";
 const SPLIT_EDGES = ["left", "right", "top", "bottom"];
 
 function allocationFor(tree, nodeId, width, height) {
@@ -90,6 +90,9 @@ function feasibleBounds(tree, width, height, preferences) {
  * getPreferences supplies live normalized splitting/resizing settings; only
  * restoreLayout is read at startup. splitRatio is the incoming pane's share.
  * Nonzero pane minima require viewport measurements before adding split panes.
+ * Workspace tabs pass a per-tab storageKey and isActive: inactive workspaces
+ * keep their chats retained but ignore main-view navigation until activate().
+ * adoptMainView false starts blank instead of claiming the open main chat.
  */
 export function createWorkspaceState({
   sessions,
@@ -98,6 +101,9 @@ export function createWorkspaceState({
   createSession,
   getPreferences = () => DEFAULT_PREFERENCES,
   id = () => crypto.randomUUID(),
+  storageKey = STORAGE_KEY,
+  isActive = () => true,
+  adoptMainView = true,
 }) {
   const preferences = () => normalizePreferences(getPreferences());
   let viewport = { width: 0, height: 0 };
@@ -106,7 +112,7 @@ export function createWorkspaceState({
   let warning = null;
   try {
     if (preferences().restoreLayout) {
-      const saved = JSON.parse(storage?.getItem(STORAGE_KEY) ?? "null");
+      const saved = JSON.parse(storage?.getItem(storageKey) ?? "null");
       const restored = validateLayout(saved?.tree);
       if (restored && !hasRepeatedSessions(restored)) {
         tree = restored;
@@ -122,9 +128,9 @@ export function createWorkspaceState({
   const references = new Map();
   const pendingChats = new Set();
   let disposed = false;
-  let initial = true;
+  let initial = adoptMainView;
   let navigating = false;
-  let observedMain = undefined;
+  let observedMain = adoptMainView ? undefined : currentMain();
   let reconcilingReferences = false;
   let undoSequence = 0;
 
@@ -155,7 +161,7 @@ export function createWorkspaceState({
     reconcileReferences();
     try {
       storage?.setItem(
-        STORAGE_KEY,
+        storageKey,
         JSON.stringify({ tree: snapshot.tree, activeId: snapshot.activeId }),
       );
     } catch (error) {
@@ -207,7 +213,17 @@ export function createWorkspaceState({
     }
   }
 
+  function currentMain() {
+    const list = sessions.list.getSnapshot();
+    return (
+      Object.values(list.byId).find(
+        (row) => (row.retainedBy?.mainView ?? 0) > 0,
+      )?.id ?? null
+    );
+  }
+
   function navigateActive() {
+    if (!isActive()) return;
     const leaf = findLeaf(snapshot.tree, snapshot.activeId);
     if (!leaf?.sessionId) return;
     navigating = true;
@@ -215,11 +231,7 @@ export function createWorkspaceState({
       navigation.openSession(leaf.sessionId);
     } finally {
       navigating = false;
-      const list = sessions.list.getSnapshot();
-      observedMain =
-        Object.values(list.byId).find(
-          (row) => (row.retainedBy?.mainView ?? 0) > 0,
-        )?.id ?? null;
+      observedMain = currentMain();
       if (observedMain !== null) initial = false;
     }
   }
@@ -236,10 +248,8 @@ export function createWorkspaceState({
     if (restoredTree !== snapshot.tree)
       publish({ tree: restoredTree, warning: null });
     else reconcileReferences();
-    const current =
-      Object.values(list.byId).find(
-        (row) => (row.retainedBy?.mainView ?? 0) > 0,
-      )?.id ?? null;
+    if (!isActive()) return;
+    const current = currentMain();
     if (initial) {
       if (!current) return;
       initial = false;
@@ -335,6 +345,13 @@ export function createWorkspaceState({
     },
     reference(sessionId) {
       return references.get(sessionId);
+    },
+    /** Tab switch: show this tab's focused chat; never adopt the previous tab's. */
+    activate() {
+      if (disposed || !isActive()) return;
+      initial = false;
+      observedMain = currentMain();
+      navigateActive();
     },
     /** Measurements never rewrite layouts or release chats, even when too small. */
     setViewport(width, height) {

@@ -27,6 +27,9 @@ function fixture({
   readyError = null,
   createSession,
   getPreferences,
+  storageKey,
+  isActive,
+  adoptMainView,
 } = {}) {
   const listeners = new Set();
   const records = [];
@@ -127,12 +130,12 @@ function fixture({
   };
   const storage = {
     getItem(key) {
-      assert.equal(key, STORAGE_KEY);
+      assert.equal(key, storageKey ?? STORAGE_KEY);
       if (readError) throw readError;
       return savedValue;
     },
     setItem(key, value) {
-      assert.equal(key, STORAGE_KEY);
+      assert.equal(key, storageKey ?? STORAGE_KEY);
       if (writeError) throw writeError;
       writes.push(JSON.parse(value));
       savedValue = value;
@@ -143,6 +146,9 @@ function fixture({
     navigation,
     storage,
     getPreferences,
+    storageKey,
+    isActive,
+    adoptMainView,
     createSession:
       typeof createSession === "function"
         ? async (originSessionId) => {
@@ -1626,5 +1632,65 @@ describe("workspace persistence and lifecycle", () => {
     assert.equal(notifications, 0);
     f.state.dispose();
     assert.ok(f.records.every((record) => record.releases === 1));
+  });
+});
+
+describe("workspace tab activation", () => {
+  const saved = {
+    tree: split("s", leaf("p1", "b"), leaf("p2", "c")),
+    activeId: "p1",
+  };
+
+  it("persists under a per-tab storage key", () => {
+    const f = fixture({ storageKey: `${STORAGE_KEY}:tab-2`, saved, main: "b" });
+    assert.deepEqual(sessionsIn(f.state), ["b", "c"]);
+    f.state.focus("p2");
+    assert.equal(JSON.parse(f.saved()).activeId, "p2");
+  });
+
+  it("keeps inactive chats retained without following main-view navigation", () => {
+    const f = fixture({ saved, isActive: () => false });
+    assert.deepEqual(sessionsIn(f.state), ["b", "c"]);
+    f.navigation.openSession("d");
+    assert.deepEqual(sessionsIn(f.state), ["b", "c"]);
+    assert.equal(f.retained("b").length, 1);
+    assert.equal(f.retained("c").length, 1);
+    f.state.focus("p2");
+    assert.deepEqual(f.navigationCalls, ["d"]);
+  });
+
+  it("still drops deleted chats while inactive", () => {
+    const f = fixture({ saved, isActive: () => false });
+    f.removeSession("c");
+    assert.deepEqual(sessionsIn(f.state), ["b", null]);
+  });
+
+  it("starts blank when not adopting the open main chat", () => {
+    const f = fixture({ adoptMainView: false });
+    assert.deepEqual(sessionsIn(f.state), [null]);
+    assert.deepEqual(f.navigationCalls, []);
+    f.navigation.openSession("b");
+    assert.deepEqual(sessionsIn(f.state), ["b"]);
+  });
+
+  it("activate re-opens the focused chat instead of adopting a stale main chat", () => {
+    let active = false;
+    const f = fixture({ saved, isActive: () => active });
+    f.navigation.openSession("d");
+    active = true;
+    f.state.activate();
+    assert.deepEqual(f.navigationCalls, ["d", "b"]);
+    assert.deepEqual(sessionsIn(f.state), ["b", "c"]);
+    f.navigation.openSession("a");
+    assert.deepEqual(sessionsIn(f.state), ["a", "c"]);
+  });
+
+  it("activating a blank tab leaves the previous main chat out of it", () => {
+    let active = false;
+    const f = fixture({ isActive: () => active, adoptMainView: false });
+    active = true;
+    f.state.activate();
+    assert.deepEqual(sessionsIn(f.state), [null]);
+    assert.deepEqual(f.navigationCalls, []);
   });
 });

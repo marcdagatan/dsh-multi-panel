@@ -1,7 +1,16 @@
 {
   "source_recordings_committed": false,
+  "reviewed_user_supplied_exports_included": true,
   "reference_viewport_width": 1920,
   "cuts": {
+    "full-walkthrough": {
+      "recording": "User-supplied finished v2 16:9 export",
+      "recorded_plugin_version": null,
+      "seconds": [[0, 52.2]],
+      "editing": "Original supplied export copied byte-for-byte; camera framing, titles and cuts retained as supplied.",
+      "privacy_approval": "Owner explicitly selected Use as supplied after disclosure of visible account balances, local paths and private workspace/chat details. No additional redaction.",
+      "metadata": "Original embedded C2PA content credentials retained unchanged; signature not verified."
+    },
     "split-panes": {
       "recording": "A",
       "seconds": [
@@ -16,20 +25,89 @@
       "crop_xywh": [740, 195, 440, 433]
     },
     "complex-layouts": {
-      "recording": "A",
-      "seconds": [[43, 57]],
+      "recording": "C",
+      "recorded_plugin_version": "0.2.6",
+      "seconds": [
+        [19, 25],
+        [35, 43]
+      ],
       "crop_xywh": null,
-      "full_workspace": true
+      "full_workspace": true,
+      "editing": "Declared cut between rearrangement and divider-resizing scenes."
     },
     "rearrange-panes": {
       "recording": "A",
       "seconds": [[48, 54]],
       "crop_xywh": null,
       "full_workspace": true
+    },
+    "permission-modes": {
+      "recording": "C",
+      "recorded_plugin_version": "0.2.6",
+      "seconds": [[46, 56]],
+      "crop_xywh": [800, 312, 656, 492],
+      "crop_coordinate_system": "1920x804 native review canvas",
+      "full_workspace": false,
+      "proof": "One composer changes from Workspace Write to Full access; a neighboring composer stays Workspace Write and receives focus. Not agent-preset selection or agent execution."
+    },
+    "targeted-file-drop": {
+      "recording": "C",
+      "recorded_plugin_version": "0.2.6",
+      "seconds": [[63, 68]],
+      "crop_xywh": [280, 920, 3160, 520],
+      "crop_coordinate_system": "Original 3440x1440 recording",
+      "full_workspace": false,
+      "proof": "One completed attachment appears only in an unfocused chat. Earlier hover over another chat is a moving drag ghost, not a second attachment."
+    },
+    "sidebar-splits": {
+      "recording": "C",
+      "recorded_plugin_version": "0.2.6",
+      "seconds": [
+        [107, 110],
+        [116, 123]
+      ],
+      "crop_xywh": null,
+      "full_workspace": true,
+      "editing": "Declared cut from tool launcher to the later nested browser/files/terminal layout and divider resizing."
+    },
+    "layout-controls": {
+      "recording": "C",
+      "recorded_plugin_version": "0.2.6",
+      "seconds": [
+        [96.5, 99],
+        [126.5, 130]
+      ],
+      "crop_xywh": null,
+      "full_workspace": true,
+      "editing": "Explicit before/after cut.",
+      "proof": "Maximized chat followed by the restored eight-chat layout, with a declared jump cut; not evidence of the hidden Restore-button click or close/Undo."
+    },
+    "layout-restoration": {
+      "recording": "C",
+      "recorded_plugin_version": "0.2.6",
+      "seconds": [
+        [145, 148],
+        [240, 243]
+      ],
+      "crop_xywh": null,
+      "full_workspace": true,
+      "editing": "Explicit before/after cut.",
+      "proof": "Saved eight-chat arrangement before/after restart, with a declared cut excluding desktop/startup footage. Native Previously opened / Restore page is a placeholder, not a restored live web page."
     }
   },
-  "privacy": "Complex-layout and rearrangement clips retain full workspace geometry with opaque editorial covers for private chat/body/title/list/task/browser-page/address/path content. Basic split and settings are tightly cropped. No source audio or original metadata copied.",
+  "privacy": "Except for the separately approved unchanged full-walkthrough export documented in cuts, the older edited clips use the following policy: full-workspace scenes retain original geometry and benign working-thread text; opaque covers hide private bodies, titles, workspace lists, goals, browser pages/URLs, file names/paths and terminal output. Targeted-drop and permission scenes are cropped: private drag ghosts, tooltip/attachment contents and unrelated approvals are hidden, while actual native controls, menus, confirmation and focus remain visible. No fabricated chats or UI; no source audio or original metadata copied.",
   "clips": {
+    "full-walkthrough": {
+      "fps": 30,
+      "frames": 1566,
+      "duration_seconds": 52.2,
+      "mp4_dimensions": [1920, 1080],
+      "audio_tracks": 0,
+      "poster_seconds": 48,
+      "mp4_file": "dsh-multi-panel-v2-16x9.mp4",
+      "poster_file": "dsh-multi-panel-v2-16x9.png",
+      "source_sha256": "6e483627c3c662ebf78b631411926431554c120b4f41ebdaf4a372265eb94267"
+    },
     "split-panes": {
       "fps": 10,
       "frames": 70,
@@ -43,11 +121,14 @@
     "complex-layouts": {
       "fps": 8,
       "frames": 128,
+      "source_frames": 112,
+      "gif_encoded_frames": 112,
       "duration_seconds": 16.0,
       "gif_duration_seconds": 16.0,
-      "mp4_dimensions": [1920, 916],
-      "gif_dimensions": [1280, 611],
-      "beginning_and_end_hold_seconds": [1, 1]
+      "mp4_dimensions": [1920, 900],
+      "gif_dimensions": [1280, 600],
+      "beginning_and_end_hold_seconds": [1, 1],
+      "gif_timing": "120/130 ms source clocks; unchanged hold frames coalesced without changing duration."
     },
     "rearrange-panes": {
       "fps": 8,
@@ -57,9 +138,82 @@
       "mp4_dimensions": [1920, 916],
       "gif_dimensions": [1280, 611],
       "beginning_and_end_hold_seconds": [1, 1]
+    },
+    "permission-modes": {
+      "fps": 8,
+      "frames": 96,
+      "source_frames": 80,
+      "gif_encoded_frames": 96,
+      "duration_seconds": 12.0,
+      "gif_duration_seconds": 12.0,
+      "mp4_dimensions": [1280, 1080],
+      "gif_dimensions": [1280, 1080],
+      "beginning_and_end_hold_seconds": [1, 1],
+      "independent_privacy_review": "PASS: all 80 rendered states and all 69 unique recognized strings reviewed; all 96 actual decoded MP4 and GIF frames and native menu/modal perimeters checked.",
+      "audio_tracks": 0
+    },
+    "targeted-file-drop": {
+      "fps": 8,
+      "frames": 56,
+      "source_frames": 40,
+      "gif_encoded_frames": 56,
+      "duration_seconds": 7.0,
+      "gif_duration_seconds": 7.0,
+      "mp4_dimensions": [1920, 428],
+      "gif_dimensions": [1280, 285],
+      "beginning_and_end_hold_seconds": [1, 1],
+      "independent_privacy_review": "PASS: all 40 rendered states, all 104 unique recognized strings and all actual 56-frame MP4/GIF outputs reviewed, including sensitive ghost/tooltip/attachment-thumbnail mask edges.",
+      "audio_tracks": 0
+    },
+    "sidebar-splits": {
+      "fps": 8,
+      "frames": 96,
+      "source_frames": 80,
+      "gif_encoded_frames": 80,
+      "duration_seconds": 12.0,
+      "gif_duration_seconds": 12.0,
+      "mp4_dimensions": [1920, 900],
+      "gif_dimensions": [1280, 600],
+      "beginning_and_end_hold_seconds": [1, 1],
+      "independent_privacy_review": "PASS: all 80 rendered states, all 143 unique recognized strings, all 96 actual MP4 frames and all 80 GIF records reviewed, including tool-content mask edges.",
+      "audio_tracks": 0
+    },
+    "layout-controls": {
+      "fps": 8,
+      "frames": 64,
+      "source_frames": 48,
+      "gif_encoded_frames": 48,
+      "duration_seconds": 8.0,
+      "gif_duration_seconds": 8.0,
+      "mp4_dimensions": [1920, 900],
+      "gif_dimensions": [1280, 600],
+      "beginning_and_end_hold_seconds": [1, 1],
+      "independent_privacy_review": "PASS: all 48 source states reviewed; transient private content in two states covered in V3 and all other 46 states pixel-identical. Corrected-state OCR and all actual 64 MP4 / 48 GIF records checked independently.",
+      "audio_tracks": 0
+    },
+    "layout-restoration": {
+      "fps": 8,
+      "frames": 64,
+      "source_frames": 48,
+      "gif_encoded_frames": 48,
+      "duration_seconds": 8.0,
+      "gif_duration_seconds": 8.0,
+      "mp4_dimensions": [1920, 900],
+      "gif_dimensions": [1280, 600],
+      "beginning_and_end_hold_seconds": [1, 1],
+      "independent_privacy_review": "PASS: all 48 source states and all 370 unique recognized strings reviewed; all actual 64 MP4 frames / 48 GIF records, URL-placeholder edges and post-restart state checked independently.",
+      "audio_tracks": 0
     }
   },
   "files": {
+    "dsh-multi-panel-v2-16x9.mp4": {
+      "bytes": 29461834,
+      "sha256": "6e483627c3c662ebf78b631411926431554c120b4f41ebdaf4a372265eb94267"
+    },
+    "dsh-multi-panel-v2-16x9.png": {
+      "bytes": 1657134,
+      "sha256": "3ddea8bdfb7ff17c36aaee09ae00b06b678375af9ffa9601b43e38e62410e7cc"
+    },
     "split-panes.png": {
       "bytes": 97109,
       "sha256": "f2c14a386c70bc767ee064c9d8734b5ded20f864427424b3782db46f171d89a7"
@@ -89,16 +243,16 @@
       "sha256": "202273b7cfd9fdbfd9adbed523092e2383a4139884ae66c53faa7498fd2f293a"
     },
     "complex-layouts.mp4": {
-      "bytes": 562391,
-      "sha256": "d34fadb7f8695ceb78ba652133239a0aa4247c334d1de4f86c952ffcd9eaaffa"
+      "bytes": 1789953,
+      "sha256": "9dc77ce99824487041ff29ebc44b7521ad6f2363533d4648765566b27ae0e6b0"
     },
     "complex-layouts.gif": {
-      "bytes": 731420,
-      "sha256": "b5d96eed47554c62c97b4ca20d324dfce1d2d81111f583c273aefae16d765e57"
+      "bytes": 2711986,
+      "sha256": "6bee575e25d1ce6b4fc518b8728b88c108f36efbb0acc3d2c15710d7fdbacf7f"
     },
     "complex-layouts.png": {
-      "bytes": 158958,
-      "sha256": "d6c27777eb072059110148a843747b23aaa0c77607f40221330ddfde5fe5bc93"
+      "bytes": 292938,
+      "sha256": "675864d642bf07db7cfa74234a135f2c5c70ffcaf269a2f0f4b483beaf138508"
     },
     "rearrange-panes.mp4": {
       "bytes": 308920,
@@ -111,17 +265,94 @@
     "rearrange-panes.png": {
       "bytes": 158320,
       "sha256": "5cafd32c4eefd8e803d658f7d63905652be5242bf5f5405a62d28d42e6c8beaa"
+    },
+    "permission-modes.gif": {
+      "bytes": 4664338,
+      "sha256": "948434b653bebbc8e06b544f618058755e3e47e82e9cfe19260f4ef2ea2c8e8d"
+    },
+    "permission-modes.mp4": {
+      "bytes": 284033,
+      "sha256": "6845d3cc6dd766c3712efadadfa40922a8b1b925f7dd6819daf8dae813afdc42"
+    },
+    "permission-modes.png": {
+      "bytes": 100550,
+      "sha256": "683c720a9b109bce9a3b6e13c659ef97d58c5d16e2372ec6ef63917acf620a5e"
+    },
+    "targeted-file-drop.gif": {
+      "bytes": 1807434,
+      "sha256": "96c255bd0856d35509370004b294c3fcf021652c95c2694ff327cf6e83f624d1"
+    },
+    "targeted-file-drop.mp4": {
+      "bytes": 167737,
+      "sha256": "9d7b11f4c3d23d4f78a4c782e4b1c4ba689947dca47b06fc0b6ddacfcba172c5"
+    },
+    "targeted-file-drop.png": {
+      "bytes": 102974,
+      "sha256": "887faff892283cd79dbbd6a5b69d87b6cc637799d6e49e56920a33b1e9ac0850"
+    },
+    "sidebar-splits.gif": {
+      "bytes": 336243,
+      "sha256": "8d1714e5e0740387c970773097a002048d3aec85656f56b6c28e01228295fbda"
+    },
+    "sidebar-splits.mp4": {
+      "bytes": 256879,
+      "sha256": "7e5ce262ffbcc9562575ddaa4521155675b744f5e87f966cdd52a4075c810571"
+    },
+    "sidebar-splits.png": {
+      "bytes": 91862,
+      "sha256": "7bcb4291c9cd8c283f68efcee6fedfcdadc6d2e47db42689b80eb3bab84b93e3"
+    },
+    "layout-controls.gif": {
+      "bytes": 366507,
+      "sha256": "42728f5b96958e70141d3553f62d3484a83dbafb4245a92d96c7e85ee855a16b"
+    },
+    "layout-controls.mp4": {
+      "bytes": 528254,
+      "sha256": "9a3edeb8b18de46595ea3190c5b1910eb24b90d2eeff264bd0423cd491ce7846"
+    },
+    "layout-controls.png": {
+      "bytes": 327483,
+      "sha256": "2a3d673d2ef015dd07b2e3129de5ae781de87c3e1d114af493b592dae7f4ca2f"
+    },
+    "layout-restoration.gif": {
+      "bytes": 320241,
+      "sha256": "6b40e1c5bab6daae6ddf282d8079adce6f7f068756ed384eecdc05e3755ee3b7"
+    },
+    "layout-restoration.mp4": {
+      "bytes": 612282,
+      "sha256": "b57e2e1e58411ea9f09f4c5ed42f4ab16f2f0880ed79ec1df71dd9d6b70dbe35"
+    },
+    "layout-restoration.png": {
+      "bytes": 309534,
+      "sha256": "d126f11553c81d8e422707855288697a60ff4693c950d0de1a1814b1e33ddb94"
     }
   },
   "complex_layout_verification": {
     "source_frames": 112,
     "all_frame_contact_sheets": 7,
-    "known_private_label_ocr_matches": 0,
+    "unique_recognized_strings_semantically_reviewed": 2017,
     "all_recognized_text_reviewed": true,
-    "unexpected_browser_text_matches_after_fix": 0,
-    "commit_keyframe_source_seconds": 51.125,
     "audio_tracks": 0,
-    "reviewed_geometry": "Inspected three-left-row geometry before 51.125s; measured shared-divider y on every later frame. Native pane controls and compositor pixels copied; no invented layouts.",
-    "geometry_count": "Six native chat panes plus one browser docked within a chat = seven visible regions; not seven chats."
+    "independent_privacy_review": "PASS: all 112 reviewed states; final opaque roof pixel change checked on every frame; all 128 decoded MP4 and all GIF frames reviewed.",
+    "geometry_count": "Eight native chats plus one browser docked inside a chat; not nine chats.",
+    "private_text_pixels_retained": false,
+    "editing": "Opaque covers retain original benign availability, recording-guide and generic plugin text. No fabricated chats or UI."
+  },
+  "recording_c_verification": {
+    "recorded_plugin_version": "0.2.6",
+    "feature_batches_independently_approved": 6,
+    "source_states_reviewed": 408,
+    "source_recording_committed": false,
+    "desktop_and_credential_intervals_in_exports": false,
+    "coverage_limits": [
+      "Agent-preset selection",
+      "Chat close/Undo",
+      "Keyboard shortcuts",
+      "Workspace tabs and renaming",
+      "Divider equalization",
+      "Same-pane browser/terminal retention",
+      "Visible Restore-button click",
+      "Automatically resumed live browser guest"
+    ]
   }
 }

@@ -14,12 +14,11 @@ Native chat panes and docked sidebar tabs for DeepSeek Harness.
 
 </div>
 
-[![Six native chat panes in a full nested workspace with a docked browser, pane rearrangement, and divider resizing](docs/media/complex-layouts.gif)](docs/media/complex-layouts.mp4)
+[![Six native chat panes in a nested DSH Multi-panel workspace](docs/media/dsh-multi-panel-v2-16x9.png)](docs/media/dsh-multi-panel-v2-16x9.mp4)
 
 <p align="center">
-  Full workspace: six native chat panes, nested splits and a docked browser.<br>
-  Drag to rearrange; resize dividers.<br>
-  <a href="docs/media/complex-layouts.mp4">Watch the MP4</a> · <a href="docs/media/complex-layouts.png">Open the still preview</a>
+  A 52-second walkthrough: native chat splits, sidebar tools and workspace tabs.<br>
+  <a href="docs/media/dsh-multi-panel-v2-16x9.mp4">Watch the 16:9 demo</a> · <a href="docs/media/dsh-multi-panel-v2-16x9.png">Open the still preview</a>
 </p>
 
 Keep several chats visible without giving up DSH's native composers, approvals,
@@ -47,39 +46,26 @@ one shared session list stays on the left.
 
 ## Demos
 
-Real desktop-recording excerpts. Open an MP4 for the higher-quality video,
-a GIF for a quick preview, or a still image for a closer look.
+Start with the full walkthrough above, or explore the earlier feature clips below.
+Open an MP4 for the higher-quality video, a GIF for a quick preview, or a still
+image for a closer look.
 
-<table>
-  <tr>
-    <td width="50%" align="center">
-      <a href="docs/media/complex-layouts.png"><img src="docs/media/complex-layouts.png" alt="Full workspace with six native chat panes, nested splits, and a docked browser region" width="100%"></a><br>
-      <b>Complex Layouts</b><br>
-      Six native chat panes and a docked browser.<br>
-      <a href="docs/media/complex-layouts.mp4">MP4</a> · <a href="docs/media/complex-layouts.gif">GIF</a> · <a href="docs/media/complex-layouts.png">Still</a>
-    </td>
-    <td width="50%" align="center">
-      <a href="docs/media/rearrange-panes.png"><img src="docs/media/rearrange-panes.png" alt="Nested native chat workspace from the pane rearrangement excerpt" width="100%"></a><br>
-      <b>Rearrange Panes</b><br>
-      Drag a chat to an edge; reflow nested panes.<br>
-      <a href="docs/media/rearrange-panes.mp4">MP4</a> · <a href="docs/media/rearrange-panes.gif">GIF</a> · <a href="docs/media/rearrange-panes.png">Still</a>
-    </td>
-  </tr>
-  <tr>
-    <td width="50%" align="center">
-      <a href="docs/media/split-panes.png"><img src="docs/media/split-panes.png" alt="Two blank native chat panes after the split-direction menu excerpt" width="100%"></a><br>
-      <b>Basic Split</b><br>
-      Direction menu, then a cut to two native chats and divider resizing.<br>
-      <a href="docs/media/split-panes.mp4">MP4</a> · <a href="docs/media/split-panes.gif">GIF</a> · <a href="docs/media/split-panes.png">Still</a>
-    </td>
-    <td width="50%" align="center">
-      <a href="docs/media/settings.png"><img src="docs/media/settings.png" alt="Multi-panel preferences in the native DSH settings window" width="100%"></a><br>
-      <b>Settings</b><br>
-      Native preferences and Advanced controls.<br>
-      <a href="docs/media/settings.mp4">MP4</a> · <a href="docs/media/settings.gif">GIF</a> · <a href="docs/media/settings.png">Still</a>
-    </td>
-  </tr>
-</table>
+| Demo                     | What the Clip Shows                                                                                                               | Watch or Inspect                                                                                                                 |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| **Full Walkthrough**     | Native chats, split layouts, docked sidebar tools and workspace tabs in a 52-second 16:9 demo.                                    | [MP4](docs/media/dsh-multi-panel-v2-16x9.mp4) · [Still](docs/media/dsh-multi-panel-v2-16x9.png)                                  |
+| **Complex Layouts**      | Eight native chat panes and a docked browser; rearrange panes and resize dividers.                                                | [MP4](docs/media/complex-layouts.mp4) · [GIF](docs/media/complex-layouts.gif) · [Still](docs/media/complex-layouts.png)          |
+| **Targeted File Drop**   | Preview the target and drop into an unfocused chat; only that chat receives the attachment.                                       | [MP4](docs/media/targeted-file-drop.mp4) · [GIF](docs/media/targeted-file-drop.gif) · [Still](docs/media/targeted-file-drop.png) |
+| **Permission Modes**     | One chat changes from Workspace Write to Full Access while another retains Workspace Write.                                       | [MP4](docs/media/permission-modes.mp4) · [GIF](docs/media/permission-modes.gif) · [Still](docs/media/permission-modes.png)       |
+| **Sidebar Splits**       | Split browser/terminal tool panes within one chat's sidebar; private tool contents are covered.                                   | [MP4](docs/media/sidebar-splits.mp4) · [GIF](docs/media/sidebar-splits.gif) · [Still](docs/media/sidebar-splits.png)             |
+| **Maximize and Restore** | Maximize one chat, then return to the whole layout, with an explicit jump cut.                                                    | [MP4](docs/media/layout-controls.mp4) · [GIF](docs/media/layout-controls.gif) · [Still](docs/media/layout-controls.png)          |
+| **Layout Restoration**   | The same eight-chat arrangement before and after an app restart, shown as a before/after cut, not a continuous startup recording. | [MP4](docs/media/layout-restoration.mp4) · [GIF](docs/media/layout-restoration.gif) · [Still](docs/media/layout-restoration.png) |
+| **Settings**             | Native preferences and Advanced controls.                                                                                         | [MP4](docs/media/settings.mp4) · [GIF](docs/media/settings.gif) · [Still](docs/media/settings.png)                               |
+
+The earlier feature clips were captured with installed plugin 0.2.6; those clips
+do not show workspace tabs (including renaming), divider double-click equalization,
+or browser/terminal retention on chat replacement. They also do not show
+agent-preset changes, chat close/Undo, or keyboard shortcuts. The supplied full
+walkthrough was captured separately; its recorded plugin version is not confirmed.
 
 ## Install
 
@@ -293,9 +279,10 @@ Plugin-authored code is MIT-licensed. Generated bundles include modified native
 DSH code and third-party modules under their own notices. Read [LICENSE](LICENSE)
 and [Third-Party Notices](THIRD_PARTY_NOTICES.md); preserve bundled notices when redistributing.
 
-<sub>Short desktop-recording excerpts. In the full-workspace clips, private chat content,
-the session list, titles, paths, and browser viewport content are covered with opaque
-editorial masks. Basic split and settings clips are cropped for privacy.
-See the <a href="docs/media/README.md">media editing notes</a>.</sub>
+<sub>The supplied walkthrough is included unchanged at its owner's request.
+Earlier feature clips use opaque editorial covers over private projects, titles,
+workspace details, browser content, paths and file previews; benign conversation
+text and native controls remain visible. Sensitive desktop and file-picker intervals
+are cut from those older clips. See the <a href="docs/media/README.md">media editing and privacy notes</a>.</sub>
 
 [↑ Back to Top](#readme-top)

@@ -2,11 +2,13 @@
 
 This repository contains only the multi-panel plugin. Its source and build inputs are separate from other plugins and from a user's DSH profile.
 
+Public source: [marcdagatan/dsh-multi-panel](https://github.com/marcdagatan/dsh-multi-panel). Publishing this repository does not create a version tag, installable GitHub release or npm release.
+
 ## Current candidate
 
 Version **0.2.11** is a local activation candidate. It keeps each chat in one workspace tab, fixing an inert composer whose placeholder drew over typed text. Version 0.2.10 added renaming workspace tabs. Version 0.2.9 keeps background chats' browser and terminal sidebars mounted behind their pane so switching chats no longer reloads the browser. Version 0.2.8 added workspace tabs with retained background chats and per-tab layouts, running-chat indicators, four unbound tab commands, and double-click divider equalization. No version tag, public GitHub release or npm publication is part of this local activation.
 
-The activation tarball uses a staging snapshot of the current compiled code, metadata and notices, plus the committed README and its verified four-demo media set. Its README version is updated to 0.2.11. Pending seven-demo README/media edits are not included; the source edits remain intact. The older recordings do not demonstrate workspace tabs or double-click equalization.
+The earlier local activation tarball used a staging snapshot of the compiled code, metadata and notices, plus the then-committed README and four-demo media set. It does not include the later Unreleased ownership/equalization fixes or the current README walkthroughs. The public source includes those changes; rebuild from this checkout using the steps below rather than uploading the earlier local archive. The older feature recordings do not demonstrate workspace tabs or double-click equalization.
 
 Supported runtime: **DSH 0.2.0-rc.2** only. Other versions must be reviewed and validated before changing the pinned artifact hashes.
 

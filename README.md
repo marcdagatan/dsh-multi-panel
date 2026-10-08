@@ -8,7 +8,7 @@
 
 Native chat panes and docked sidebar tabs for DeepSeek Harness.
 
-![Supported DSH: 0.2.0-rc.2 only; plugin code: MIT with bundled third-party notices; release candidate: 0.2.7](docs/media/badges.svg)
+![Supported DSH: 0.2.0-rc.2 only; plugin code: MIT with bundled third-party notices; release candidate: 0.2.11](docs/media/badges.svg)
 
 [Install](#install) · [Quick Start](#quick-start) · [Features](#features) · [Demos](#demos) · [Settings](#settings) · [Rollback](#rollback)
 
@@ -69,9 +69,9 @@ walkthrough was captured separately; its recorded plugin version is not confirme
 
 ## Install
 
-**Not published yet.** Version 0.2.7 is the current release candidate, not an npm
-release. The package is currently named `dsh-multi-panel`; a scoped npm name
-will be confirmed before publication.
+**Source available; no npm release yet.** Version 0.2.11 is the current local
+activation candidate. The package is named `dsh-multi-panel`; a scoped npm name
+will be confirmed before npm publication.
 
 For now, build a local tarball and install it through DSH's plugin manager.
 A source checkout alone is not installable: it needs artifacts extracted from

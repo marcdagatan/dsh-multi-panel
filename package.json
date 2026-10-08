@@ -16,6 +16,14 @@
   "description": "Independent split chat workspaces and vertically or horizontally docked side-panel tabs for DSH",
   "type": "module",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/marcdagatan/dsh-multi-panel.git"
+  },
+  "homepage": "https://github.com/marcdagatan/dsh-multi-panel#readme",
+  "bugs": {
+    "url": "https://github.com/marcdagatan/dsh-multi-panel/issues"
+  },
   "main": "lib/index.js",
   "exports": {
     ".": "./lib/index.js",

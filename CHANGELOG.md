@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Keep restored chat ownership tracking current after startup duplicate cleanup,
+  so reopening a cleared chat transfers it instead of mounting a second composer.
+- Transfer browser/terminal sidebar ownership with a chat across workspace tabs,
+  removing hidden retained copies from the previous tab as well as shown copies.
+  Ordinary chat replacement in the same pane still retains its sidebar.
+- Equalize a row or column in one double-click when minimum pane sizes allow it,
+  including long nested runs. A single click does not equalize panes.
+
 ## 0.2.11 — Local activation candidate
 
 - Fix the chat box showing its placeholder over typed text. A chat open in

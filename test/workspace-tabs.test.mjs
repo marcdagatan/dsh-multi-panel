@@ -5,7 +5,11 @@ import {
   createWorkspaceTabs,
   TABS_STORAGE_KEY,
 } from "../client/workspace-tabs.mjs";
-import { STORAGE_KEY } from "../client/workspace-state.mjs";
+import {
+  createWorkspaceState,
+  STORAGE_KEY,
+} from "../client/workspace-state.mjs";
+import { leaves } from "../client/split-model.mjs";
 
 function fixture({ saved = {}, restore = true, shown = {} } = {}) {
   const values = { ...saved };
@@ -71,6 +75,76 @@ function fixture({ saved = {}, restore = true, shown = {} } = {}) {
   const index = () => JSON.parse(values[TABS_STORAGE_KEY]);
   return { tabs, created, values, ids, index };
 }
+
+function stateFixture(saved = {}) {
+  const values = { ...saved };
+  const listeners = new Set();
+  const rows = Object.fromEntries(
+    ["a", "b", "c"].map((id) => [id, { id, retainedBy: { mainView: 0 } }]),
+  );
+  const records = [];
+  const emit = () => {
+    for (const listener of [...listeners]) listener();
+  };
+  const sessions = {
+    list: {
+      getSnapshot: () => ({ phase: "ready", byId: rows }),
+      subscribe(listener) {
+        listeners.add(listener);
+        return () => listeners.delete(listener);
+      },
+    },
+    retain(sessionId) {
+      assert.ok(Object.hasOwn(rows, sessionId));
+      const record = {
+        sessionId,
+        ready: Promise.resolve(),
+        releases: 0,
+        release() {
+          record.releases++;
+          emit();
+        },
+      };
+      records.push(record);
+      emit();
+      return record;
+    },
+  };
+  const navigation = {
+    openSession(sessionId) {
+      for (const row of Object.values(rows))
+        row.retainedBy.mainView = row.id === sessionId ? 1 : 0;
+      emit();
+    },
+  };
+  const storage = {
+    getItem: (key) => values[key] ?? null,
+    setItem: (key, value) => {
+      values[key] = value;
+    },
+    removeItem: (key) => {
+      delete values[key];
+    },
+  };
+  let nextPane = 0;
+  let nextTab = 0;
+  const tabs = createWorkspaceTabs({
+    storage,
+    id: () => `tab-${++nextTab}`,
+    createWorkspace: (options) =>
+      createWorkspaceState({
+        ...options,
+        sessions,
+        navigation,
+        storage,
+        id: () => `pane-${++nextPane}`,
+      }),
+  });
+  return { tabs, values, records };
+}
+
+const shownSessions = (workspace) =>
+  leaves(workspace.getSnapshot().tree).map((pane) => pane.sessionId);
 
 describe("workspace tabs", () => {
   it("starts with one default tab that keeps the existing layout key", () => {
@@ -213,6 +287,75 @@ describe("workspace tabs", () => {
 });
 
 describe("one chat per app across tabs", () => {
+  it("a restored tab can reclaim a chat it yielded without duplicating the active tab", (t) => {
+    const layout = (id) =>
+      JSON.stringify({
+        tree: { type: "leaf", id, sessionId: "a" },
+        activeId: id,
+      });
+    const f = stateFixture({
+      [TABS_STORAGE_KEY]: JSON.stringify({
+        tabs: ["default", "other"],
+        activeId: "other",
+      }),
+      [STORAGE_KEY]: layout("first"),
+      [`${STORAGE_KEY}:other`]: layout("second"),
+    });
+    t.after(() => f.tabs.dispose());
+    const [first, second] = f.tabs
+      .getSnapshot()
+      .tabs.map((tab) => tab.workspace);
+    assert.deepEqual(shownSessions(first), [null]);
+    assert.deepEqual(shownSessions(second), ["a"]);
+    f.tabs.select("default");
+    first.select("first", "a");
+    assert.deepEqual(shownSessions(first), ["a"]);
+    assert.deepEqual(shownSessions(second), [null]);
+    assert.equal(second.reference("a"), undefined);
+    assert.equal(
+      f.records.filter(
+        (record) => record.sessionId === "a" && record.releases === 0,
+      ).length,
+      1,
+    );
+  });
+
+  for (const hidden of [false, true]) {
+    it(`transfers a ${hidden ? "background" : "shown"} held chat between workspaces without retaining its old sidebar`, (t) => {
+      const f = stateFixture();
+      t.after(() => f.tabs.dispose());
+      const first = f.tabs.active();
+      const paneId = first.getSnapshot().activeId;
+      first.select(paneId, "a");
+      const staleSignal = new AbortController();
+      first.retainTab("a", staleSignal.signal);
+      const oldReference = first.reference("a");
+      if (hidden) first.select(paneId, "b");
+      f.tabs.add();
+      const second = f.tabs.active();
+      second.select(second.getSnapshot().activeId, "a");
+      assert.deepEqual(shownSessions(first), [hidden ? "b" : null]);
+      assert.deepEqual(first.getSnapshot().background, {});
+      assert.equal(first.reference("a"), undefined);
+      assert.equal(oldReference.releases, 1);
+      assert.deepEqual(shownSessions(second), ["a"]);
+
+      f.tabs.select("default");
+      first.select(paneId, "a");
+      assert.deepEqual(shownSessions(second), [null]);
+      const newSignal = new AbortController();
+      first.retainTab("a", newSignal.signal);
+      const newReference = first.reference("a");
+      first.select(paneId, "b");
+      staleSignal.abort();
+      assert.deepEqual(first.getSnapshot().background, { a: paneId });
+      assert.equal(first.reference("a"), newReference);
+      newSignal.abort();
+      assert.deepEqual(first.getSnapshot().background, {});
+      assert.equal(newReference.releases, 1);
+    });
+  }
+
   it("showing a chat in one tab releases it from every other tab", () => {
     const f = fixture();
     const [first] = f.created;

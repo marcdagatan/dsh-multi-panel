@@ -152,11 +152,22 @@ ownership are session-scoped.
 - **Keyboard resizing:** Focus a divider and use the corresponding arrow keys.
   A pane's center is not a split target.
 - **Equal sizes:** Double-click a divider to give every pane in that row or
-  column the same width or height. Other rows and columns keep their sizes.
+  column the same width or height in one action. A single click does not equalize
+  panes. Minimum pane sizes still apply; other rows and columns keep their layouts.
 - **Undo:** The notice lasts 3 seconds by default with a shrinking countdown
   bar. Another layout change restarts it; duration and hover/focus pause are configurable.
 - **Local sidebar layouts:** Splits, widths, and fullscreen belong to their
   owning chat. Manually resized per-session widths override the default.
+- **Sidebar lifetime:** Replacing a chat in the same pane keeps its browser/terminal
+  sidebar mounted but hidden behind that pane. Closing the pane or its last retained
+  browser/terminal tab releases it; chats without those tabs unload normally.
+  Reopening the chat in another pane still reloads its Electron webview. Opening
+  it in another workspace tab transfers ownership and removes any hidden sidebar
+  copy from the previous tab.
+- **Rename workspace tabs:** Double-click a tab name to edit it. Enter or leaving
+  the field saves; Escape cancels. An empty name restores the automatic chat title.
+  Custom names are saved in this browser's tab index and restored on startup only
+  when layout restoration is enabled.
 - **Restore:** Invalid, removed, or ephemeral blank chat references return as
   empty panes. Layout and widths are saved in this browser, not across browsers.
 - **Bounds:** Safety limits are 64 chat panes, 32 nested split levels, and

@@ -1,5 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import * as jsx from "react/jsx-runtime";
 import { JSDOM } from "jsdom";
 import React, { act } from "react";
 // React DOM detects input-event support at import time; provide a real DOM first.
@@ -17,7 +19,7 @@ import { createWorkspaceState } from "../client/workspace-state.mjs";
 const h = React.createElement;
 const Session = React.createContext(null);
 
-function fixture() {
+function fixture({ createSidebar = () => () => null } = {}) {
   const dom = new JSDOM('<!DOCTYPE html><body><div id="root"></div></body>', {
     url: "http://127.0.0.1:19387",
   });
@@ -144,6 +146,7 @@ function fixture() {
         sessions.list.getSnapshot,
       ),
     );
+  const Sidebar = createSidebar();
   const container = document.getElementById("root");
   const root = createRoot(container);
   act(() =>
@@ -152,8 +155,8 @@ function fixture() {
         tabs,
         useSessions,
         SessionProvider: Provider,
-        renderSlot: (name) =>
-          name === "main.conversation" ? h(NativeChat) : null,
+        renderSlot: (name, props) =>
+          name === "main.conversation" ? h(NativeChat) : h(Sidebar, props),
       }),
     ),
   );
@@ -224,6 +227,228 @@ test("a new tab opens a blank workspace while background chats stay mounted and 
     assert.equal(f.mounted, mounted, "switching tabs never remounts chats");
   } finally {
     f.cleanup();
+  }
+});
+
+function transferRetainedChat(f, checkPresentation = () => {}) {
+  const first = f.tabs.active();
+  const firstPane = first.getSnapshot().activeId;
+  act(() => first.select(firstPane, "b"));
+  assert.deepEqual(first.getSnapshot().background, { a: firstPane });
+  assert.ok(first.reference("a"));
+  const heldSidebar = f.$('[data-retained-sidebar="a"]');
+  assert.equal(heldSidebar.closest(".dshMulti-paneBody").style.display, "none");
+
+  act(() => f.tabs.add());
+  const second = f.tabs.active();
+  const secondPane = second.getSnapshot().activeId;
+  act(() => second.select(secondPane, "a"));
+  assert.deepEqual(first.getSnapshot().background, {});
+  assert.equal(first.reference("a"), undefined);
+  assert.equal(f.list().byId.a.retainedBy.multiPanel, 1);
+  assert.equal(
+    f.dom.window.document.querySelectorAll('[data-retained-sidebar="a"]')
+      .length,
+    1,
+  );
+  checkPresentation(secondPane);
+
+  act(() => f.tabs.select("default"));
+  act(() => first.select(firstPane, "a"));
+  assert.deepEqual(second.getSnapshot().background, {});
+  assert.equal(second.reference("a"), undefined);
+  assert.equal(f.list().byId.a.retainedBy.multiPanel, 1);
+  assert.equal(
+    f.dom.window.document.querySelectorAll('[data-retained-sidebar="a"]')
+      .length,
+    1,
+  );
+  checkPresentation(firstPane);
+}
+
+test("transferring a retained sidebar leaves one mounted owner and releases source backgrounds", () => {
+  const signal = new AbortController().signal;
+  const f = fixture({
+    createSidebar: () =>
+      function Sidebar(props) {
+        const sessionId = React.useContext(Session);
+        React.useLayoutEffect(
+          () =>
+            sessionId === "a"
+              ? props.retainTab("browser-a", signal)
+              : undefined,
+          [sessionId, props.retainTab],
+        );
+        return sessionId === "a"
+          ? h("div", { "data-retained-sidebar": sessionId })
+          : null;
+      },
+  });
+  try {
+    transferRetainedChat(f);
+  } finally {
+    f.cleanup();
+  }
+});
+
+test("native browser presentation follows a retained chat's new workspace owner", async (t) => {
+  let source;
+  try {
+    source = readFileSync(
+      new URL(
+        "../runtime-evidence/dsh/node_modules/@deepseek-ai/dsh-client-ui-sidebar-browser/lib/client.js",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+  } catch (error) {
+    if (error.code !== "ENOENT") throw error;
+    t.skip(
+      "Native browser runtime extraction absent; portable ownership regression still runs.",
+    );
+    return;
+  }
+  const exportBoundary = "exports.apply = apply;";
+  assert.equal(source.split(exportBoundary).length, 2);
+  const instrumented = source.replace(
+    exportBoundary,
+    "exports.testing = { BrowserBody, createBrowserControllers, ElectronWebviewPresentation, emptyBrowserFrame }; exports.apply = apply;",
+  );
+  let controllers;
+  const occurrence = new AbortController();
+  const f = fixture({
+    createSidebar() {
+      let native;
+      const observable = (initial) => {
+        let value = initial;
+        const listeners = new Set();
+        return {
+          getSnapshot: () => value,
+          subscribe(listener) {
+            listeners.add(listener);
+            return () => listeners.delete(listener);
+          },
+          set(next) {
+            value = next;
+            for (const listener of listeners) listener();
+          },
+        };
+      };
+      const primitives = new Proxy(
+        { Tooltip: ({ children }) => children },
+        { get: (target, key) => target[key] ?? (() => null) },
+      );
+      const modules = {
+        react: React,
+        "react/jsx-runtime": jsx,
+        "@deepseek-ai/dsh-client-ui-primitives": primitives,
+        "@deepseek-ai/dsh-client-store": { createSnapshotStore: observable },
+      };
+      const previousLoader = window.__ModuleLoader__;
+      window.__ModuleLoader__ = {
+        load(definition) {
+          native = definition.factory((name) => {
+            assert.ok(
+              Object.hasOwn(modules, name),
+              `unexpected native module ${name}`,
+            );
+            return modules[name];
+          });
+        },
+      };
+      try {
+        new Function("window", instrumented)(window);
+      } finally {
+        window.__ModuleLoader__ = previousLoader;
+      }
+      const {
+        BrowserBody,
+        createBrowserControllers,
+        ElectronWebviewPresentation,
+        emptyBrowserFrame,
+      } = native.testing;
+      // Session IO and Electron guest/frame IO are doubles; the native controller,
+      // body and physical presentation ownership/cleanup execute unchanged.
+      const noop = () => {};
+      controllers = createBrowserControllers(
+        { replace: noop, forget: noop },
+        () => {
+          const presentation = new ElectronWebviewPresentation({
+            mounted() {
+              const guest = document.createElement("div");
+              guest.dataset.browserGuest = "a";
+              presentation.present(guest);
+            },
+            unmounted: () => presentation.clear(),
+          });
+          return {
+            presentation,
+            frame: {
+              getSnapshot: () => emptyBrowserFrame(),
+              subscribe: () => noop,
+              dispose: () => {
+                presentation.dispose();
+                return Promise.resolve();
+              },
+            },
+          };
+        },
+        () => true,
+      );
+      const tab = {
+        id: "browser-a",
+        signal: occurrence.signal,
+        navigation: {},
+        actions: { bindCommands: () => noop },
+      };
+      const props = {
+        ...controllers,
+        useBrowserState: () => undefined,
+        useStore: () => undefined,
+        useTabInfo: () => ({ tab }),
+        t: (key) => key,
+      };
+      return function Sidebar(owner) {
+        const sessionId = React.useContext(Session);
+        React.useLayoutEffect(
+          () =>
+            sessionId === "a" ? owner.retainTab(tab.id, tab.signal) : undefined,
+          [sessionId, owner.retainTab],
+        );
+        return sessionId === "a"
+          ? h(
+              "div",
+              { "data-retained-sidebar": sessionId },
+              h(BrowserBody, props),
+            )
+          : null;
+      };
+    },
+  });
+  const originalController = controllers.keyedHooks.browserState("browser-a");
+  try {
+    transferRetainedChat(f, (paneId) => {
+      const guest = f.$('[data-browser-guest="a"]');
+      assert.ok(
+        guest,
+        "source cleanup must not detach the new native browser host",
+      );
+      assert.equal(
+        f.dom.window.document.querySelectorAll('[data-browser-guest="a"]')
+          .length,
+        1,
+      );
+      assert.equal(guest.closest("[data-chat-pane]").dataset.chatPane, paneId);
+      assert.equal(guest.closest('[role="tabpanel"]').hidden, false);
+      assert.equal(guest.closest(".dshMulti-paneBody").style.display, "");
+      assert.equal(
+        controllers.keyedHooks.browserState("browser-a"),
+        originalController,
+      );
+    });
+  } finally {
+    f.cleanup();
+    await controllers.dispose();
   }
 });
 

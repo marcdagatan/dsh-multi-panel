@@ -6,6 +6,7 @@ import {
   moveLeaf,
   resizeSplit,
   equalizedRatios,
+  equalizedLayout,
   setLeafSession,
   validateLayout,
 } from "./split-model.mjs";
@@ -60,6 +61,14 @@ function minimumAllocation(tree, preferences) {
           second.height / (1 - tree.ratio),
         ),
       };
+}
+
+// Inverse ratio calculations can accumulate rounding over the validated
+// maximum of 32 split levels. Accept only that scaled numerical error when
+// checking a joint equalization candidate, not a measurable minimum shortfall.
+function fitsMinimum(minimum, available) {
+  const rounding = Number.EPSILON * 32 * Math.max(minimum, available);
+  return minimum <= available + rounding;
 }
 
 function feasibleBounds(tree, width, height, preferences) {
@@ -395,17 +404,20 @@ export function createWorkspaceState({
      */
     retainTab(sessionId, signal) {
       if (disposed || signal.aborted) return () => {};
-      tabHolds.set(sessionId, (tabHolds.get(sessionId) ?? 0) + 1);
+      const holds = tabHolds.get(sessionId) ?? { count: 0 };
+      holds.count++;
+      tabHolds.set(sessionId, holds);
       let held = true;
       const release = () => {
         if (!held) return;
         held = false;
         signal.removeEventListener("abort", release);
-        const count = tabHolds.get(sessionId) - 1;
-        if (count > 0) tabHolds.set(sessionId, count);
-        else tabHolds.delete(sessionId);
-        if (count === 0 && Object.hasOwn(snapshot.background, sessionId))
-          publish({});
+        // A transferred chat may have returned with new tabs before the old
+        // occurrences unmount. Their stale callbacks cannot release its new holds.
+        if (tabHolds.get(sessionId) !== holds) return;
+        if (--holds.count > 0) return;
+        tabHolds.delete(sessionId);
+        if (Object.hasOwn(snapshot.background, sessionId)) publish({});
       };
       signal.addEventListener("abort", release, { once: true });
       return release;
@@ -413,15 +425,25 @@ export function createWorkspaceState({
     /**
      * Another tab now shows these chats. A chat's composer editor binds to one
      * DOM root, so a second mounted copy would leave the other one inert: empty
-     * these panes (keeping the layout) instead. No undo, no navigation.
+     * these panes (keeping the layout) instead. Evict held background sidebars
+     * too: their native tab hosts cannot be mounted twice. No undo or navigation.
      * @param {string[]} sessionIds
      */
     release(sessionIds) {
+      if (disposed) return;
+      // Remove holds first so nextBackground cannot resurrect the evicted chat.
+      for (const sessionId of sessionIds) tabHolds.delete(sessionId);
       let tree = snapshot.tree;
       for (const leaf of leaves(tree))
         if (sessionIds.includes(leaf.sessionId))
           tree = setLeafSession(tree, leaf.id, null);
-      if (tree !== snapshot.tree) publish({ tree });
+      if (
+        tree !== snapshot.tree ||
+        sessionIds.some((sessionId) =>
+          Object.hasOwn(snapshot.background, sessionId),
+        )
+      )
+        publish({ tree });
     },
     /** Tab switch: show this tab's focused chat; never adopt the previous tab's. */
     activate() {
@@ -664,8 +686,29 @@ export function createWorkspaceState({
     },
     /** Even out the divider's same-axis run in one layout change. */
     equalize(splitId) {
+      const ratios = equalizedRatios(snapshot.tree, splitId);
+      const candidate = equalizedLayout(snapshot.tree, splitId);
+      if (candidate === snapshot.tree) return;
+      const allocation = allocationFor(
+        candidate,
+        ratios[0][0],
+        viewport.width,
+        viewport.height,
+      );
+      const minimum = minimumAllocation(allocation.node, preferences());
+      // Check all proposed ratios together: old descendant ratios must not
+      // restrict a parent whose descendants are changing in this same action.
+      if (
+        fitsMinimum(minimum.width, allocation.width) &&
+        fitsMinimum(minimum.height, allocation.height)
+      ) {
+        publish({ tree: candidate });
+        return;
+      }
+      // Exact shares cannot fit. Keep the existing topology and minimum-aware
+      // divider clamps instead of replacing it with an infeasible balanced run.
       let nextTree = snapshot.tree;
-      for (const [id, ratio] of equalizedRatios(nextTree, splitId)) {
+      for (const [id, ratio] of ratios) {
         const bounds = getResizeBounds(id, undefined, undefined, nextTree);
         if (!bounds) continue;
         const bounded = Math.max(bounds.min, Math.min(bounds.max, ratio));
@@ -698,6 +741,7 @@ export function createWorkspaceState({
       listeners.clear();
       for (const reference of references.values()) reference.release();
       references.clear();
+      tabHolds.clear();
     },
   };
 }

@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 
 import {
   edgeAt,
+  equalizedLayout,
   equalizedRatios,
   findLeaf,
   leaves,
@@ -595,6 +596,74 @@ describe("edge previews", () => {
 });
 
 describe("equalizing splits", () => {
+  it("preserves topology and leaf identity when equal ratios already fit the bounds", () => {
+    const tree = freezeTree(
+      split(
+        "root",
+        leaf("a"),
+        split("inner", leaf("b"), leaf("c"), "horizontal", 0.8),
+        "horizontal",
+        0.7,
+      ),
+    );
+    const next = equalizedLayout(tree, "inner");
+    assert.equal(next.ratio, 1 / 3);
+    assert.equal(next.second.id, "inner");
+    assert.equal(next.second.ratio, 0.5);
+    assert.ok(
+      leaves(next).every((pane, index) => pane === leaves(tree)[index]),
+    );
+    assert.equal(equalizedLayout(next, "root"), next);
+    assert.equal(equalizedLayout(tree, "a"), tree);
+    assert.equal(equalizedLayout(tree, "missing"), tree);
+  });
+
+  it("balances long runs using existing split IDs and unchanged ordered cross-axis units", () => {
+    const cross = freezeTree(
+      split("cross", leaf("cross-a"), leaf("cross-b"), "vertical", 0.3),
+    );
+    const units = [
+      leaf("a"),
+      cross,
+      ...Array.from({ length: 6 }, (_, index) => leaf(`tail-${index}`)),
+    ];
+    let tree = units.at(-1);
+    for (let index = units.length - 2; index >= 0; index--)
+      tree = split(`s${index}`, units[index], tree);
+    freezeTree(tree);
+    const next = equalizedLayout(tree, "s5");
+    const shares = (node, size) =>
+      node.type !== "split" || node.axis !== "horizontal"
+        ? [size]
+        : [
+            ...shares(node.first, size * node.ratio),
+            ...shares(node.second, size * (1 - node.ratio)),
+          ];
+    const splitIds = (node) =>
+      node.type === "leaf"
+        ? []
+        : [node.id, ...splitIds(node.first), ...splitIds(node.second)];
+    assert.deepEqual(shares(next, 1), Array(8).fill(1 / 8));
+    assert.deepEqual(splitIds(next).sort(), splitIds(tree).sort());
+    assert.equal(next.id, tree.id);
+    assert.ok(
+      leaves(next).every((pane, index) => pane === leaves(tree)[index]),
+    );
+    assert.equal(next.first.first.second, cross);
+    assert.deepEqual(validateLayout(JSON.parse(JSON.stringify(next))), next);
+    assert.equal(equalizedLayout(next, "s5"), next);
+  });
+
+  it("rejects regrouping that would push a deep cross-axis unit past the existing depth limit", () => {
+    const cross = split("cross", chain(29), leaf("cross-side"), "vertical");
+    let tail = leaf("tail-7");
+    for (let index = 6; index >= 1; index--)
+      tail = split(`s${index}`, leaf(`tail-${index}`), tail);
+    const tree = freezeTree(split("root", cross, tail));
+    assert.notEqual(validateLayout(tree), null);
+    assert.equal(equalizedLayout(tree, "root"), tree);
+  });
+
   it("evens every pane in the same-axis run the divider belongs to", () => {
     const tree = freezeTree(
       split(

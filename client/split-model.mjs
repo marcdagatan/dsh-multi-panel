@@ -170,14 +170,69 @@ function runRatios(node, axis) {
  * @returns {Array<[string, number]>}
  */
 export function equalizedRatios(tree, id) {
-  function runTop(node, top) {
-    if (node.type === "leaf") return null;
-    const current = top?.axis === node.axis ? top : node;
-    if (node.id === id) return current;
-    return runTop(node.first, current) ?? runTop(node.second, current);
-  }
-  const top = runTop(tree, null);
+  const top = runTop(tree, id);
   return top ? runRatios(top, top.axis) : [];
+}
+
+function runTop(node, id, top = null) {
+  if (node.type === "leaf") return null;
+  const current = top?.axis === node.axis ? top : node;
+  if (node.id === id) return current;
+  return runTop(node.first, id, current) ?? runTop(node.second, id, current);
+}
+
+/**
+ * Equal-share candidate for the divider's same-axis run. Preserve topology when
+ * its exact ratios fit [0.15, 0.85]; otherwise balance only that run, retaining
+ * its root/split IDs, leaf order and leaf/cross-axis subtree references. Never
+ * weaken persistence limits: unsafe regrouping, leaves and missing IDs return
+ * the original tree. Callers enforce viewport/minimum-size feasibility.
+ * @param {Node} tree
+ * @param {string} id
+ * @returns {Node}
+ */
+export function equalizedLayout(tree, id) {
+  const top = runTop(tree, id);
+  if (!top) return tree;
+  const ratios = runRatios(top, top.axis);
+  if (ratios.every(([, ratio]) => ratio >= MIN_RATIO && ratio <= MAX_RATIO))
+    return ratios.reduce(
+      (next, [splitId, ratio]) => resizeSplit(next, splitId, ratio),
+      tree,
+    );
+
+  const units = [];
+  const ids = [];
+  function collect(node) {
+    if (node.type !== "split" || node.axis !== top.axis) {
+      units.push(node);
+      return;
+    }
+    ids.push(node.id);
+    collect(node.first);
+    collect(node.second);
+  }
+  collect(top);
+  let nextId = 0;
+  function balance(start, end) {
+    if (end - start === 1) return units[start];
+    const middle = start + Math.floor((end - start) / 2);
+    return {
+      type: "split",
+      id: ids[nextId++],
+      axis: top.axis,
+      ratio: (middle - start) / (end - start),
+      first: balance(start, middle),
+      second: balance(middle, end),
+    };
+  }
+  const balanced = balance(0, units.length);
+  const next = updateNode(
+    tree,
+    (node) => node.id === top.id,
+    () => balanced,
+  );
+  return validateLayout(next) === null ? tree : next;
 }
 
 /**

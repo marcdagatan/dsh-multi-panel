@@ -10,13 +10,16 @@ const cleanName = (value) =>
     ? value.trim().slice(0, MAX_NAME) || undefined
     : undefined;
 
-const shownIn = (workspace) => {
-  const tree = workspace.getSnapshot?.().tree;
-  return tree
-    ? leaves(tree)
-        .map((leaf) => leaf.sessionId)
-        .filter(Boolean)
-    : [];
+const mountedIn = (workspace) => {
+  const snapshot = workspace.getSnapshot?.();
+  return [
+    ...(snapshot?.tree
+      ? leaves(snapshot.tree)
+          .map((leaf) => leaf.sessionId)
+          .filter(Boolean)
+      : []),
+    ...Object.keys(snapshot?.background ?? {}),
+  ];
 };
 
 // The first tab keeps the pre-tabs layout key so existing layouts carry over.
@@ -49,8 +52,9 @@ function readIndex(storage) {
  * Owns the list of workspace tabs. Each tab is an independent pane layout
  * from createWorkspace({storageKey, isActive, adoptMainView}). Switching tabs
  * never disposes a workspace, so chats in background tabs stay retained and
- * mounted; only closing a tab releases its chats (they keep running natively).
- * A chat shows in at most one tab: each chat has one composer editor, and a
+ * mounted unless transferred to another tab. Closing releases the tab's chats
+ * without stopping them natively. A chat and its held sidebars belong to at most
+ * one tab: each chat has one composer editor, and a
  * second mounted copy would steal it, leaving the visible composer inert
  * (typed text drawn over a placeholder that never hides). The tab that most
  * recently showed a chat keeps it; at startup the active tab wins.
@@ -66,18 +70,18 @@ export function createWorkspaceTabs({
   const listeners = new Set();
   const watched = new Map();
 
-  // Track a tab's shown chats; chats it newly shows leave every other tab.
-  // At startup (yieldToOthers) it instead drops chats an earlier tab holds.
+  // Include hidden keep-mounted sidebars: their native hosts are session-owned
+  // too. Newly mounted chats leave other tabs; at startup the active tab wins.
   function watch(tab, yieldToOthers = false) {
-    const entry = { workspace: tab.workspace, shown: new Set() };
+    const entry = { workspace: tab.workspace, mounted: new Set() };
     const sync = () => {
-      const now = shownIn(entry.workspace);
-      const added = now.filter((sessionId) => !entry.shown.has(sessionId));
-      entry.shown = new Set(now);
+      const now = mountedIn(entry.workspace);
+      const added = now.filter((sessionId) => !entry.mounted.has(sessionId));
+      entry.mounted = new Set(now);
       for (const other of [...watched.values()]) {
         if (other === entry) continue;
         const duplicates = added.filter((sessionId) =>
-          other.shown.has(sessionId),
+          other.mounted.has(sessionId),
         );
         if (!duplicates.length) continue;
         if (yieldToOthers) entry.workspace.release?.(duplicates);
@@ -85,9 +89,11 @@ export function createWorkspaceTabs({
       }
     };
     watched.set(tab.id, entry);
+    // Startup self-release publishes synchronously; observe it before seeding
+    // membership so a later re-selection is recognized as a fresh acquisition.
+    entry.off = entry.workspace.subscribe?.(sync);
     sync();
     yieldToOthers = false;
-    entry.off = entry.workspace.subscribe?.(sync);
   }
 
   function unwatch(tabId) {

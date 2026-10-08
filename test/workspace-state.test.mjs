@@ -753,6 +753,280 @@ describe("workspace configurable split behavior", () => {
 });
 
 describe("workspace minimum pane sizes", () => {
+  for (const axis of ["horizontal", "vertical"]) {
+    for (const nestedFirst of [false, true]) {
+      it(`equalizes a feasible asymmetric ${axis} run in one change with its nested branch ${nestedFirst ? "first" : "second"}`, () => {
+        const inner = split(
+          "inner",
+          leaf("b-pane", "b"),
+          leaf("c-pane", "c"),
+          axis,
+          nestedFirst ? 0.2 : 0.8,
+        );
+        const tree = split(
+          "root",
+          nestedFirst ? inner : leaf("a-pane", "a"),
+          nestedFirst ? leaf("a-pane", "a") : inner,
+          axis,
+          nestedFirst ? 0.75 : 0.25,
+        );
+        const f = fixture({
+          saved: { tree, activeId: "a-pane" },
+          main: null,
+          getPreferences: () => ({ minPaneWidth: 100, minPaneHeight: 100 }),
+        });
+        try {
+          f.state.setViewport(
+            ...(axis === "horizontal" ? [700, 400] : [400, 700]),
+          );
+          let publishes = 0;
+          f.state.subscribe(() => publishes++);
+          f.state.equalize("inner");
+          const next = f.state.getSnapshot().tree;
+          assert.ok(
+            Math.abs(next.ratio - (nestedFirst ? 2 / 3 : 1 / 3)) < 1e-12,
+          );
+          assert.equal((nestedFirst ? next.first : next.second).ratio, 0.5);
+          assert.equal(publishes, 1);
+          f.state.equalize("root");
+          assert.equal(
+            publishes,
+            1,
+            "the first action already equalized the run",
+          );
+          assertReferenceOwnership(f);
+        } finally {
+          f.state.dispose();
+        }
+      });
+    }
+  }
+
+  it("equalizes seven/eight-pane skewed runs without weakening ratio bounds or changing pane order", () => {
+    for (const axis of ["horizontal", "vertical"]) {
+      for (const count of [7, 8]) {
+        let tree = leaf(`p${count - 1}`);
+        for (let index = count - 2; index >= 0; index--)
+          tree = split(
+            `s${index}`,
+            leaf(`p${index}`, ["a", "b", "c", "d"][index] ?? null),
+            tree,
+            axis,
+            0.5,
+          );
+        const f = fixture({
+          saved: { tree, activeId: "p0" },
+          main: null,
+          getPreferences: () => ({
+            minPaneWidth: count === 7 ? 0 : 100,
+            minPaneHeight: count === 7 ? 0 : 100,
+          }),
+        });
+        try {
+          f.state.setViewport(1600, 1600);
+          const before = leaves(f.state.getSnapshot().tree);
+          let publishes = 0;
+          f.state.subscribe(() => publishes++);
+          f.state.equalize("s5");
+          const next = f.state.getSnapshot().tree;
+          const widths = (node, length) =>
+            node.type === "leaf"
+              ? [length]
+              : [
+                  ...widths(node.first, length * node.ratio),
+                  ...widths(node.second, length * (1 - node.ratio)),
+                ];
+          assert.ok(
+            widths(next, 1600).every(
+              (size) => Math.abs(size - 1600 / count) < 1e-10,
+            ),
+          );
+          assert.deepEqual(leaves(next), before);
+          assert.ok(
+            leaves(next).every((pane, index) => pane === before[index]),
+          );
+          assert.equal(next.id, "s0");
+          assert.equal(publishes, 1);
+          f.state.equalize("s5");
+          assert.equal(publishes, 1);
+          assert.deepEqual(JSON.parse(f.saved()).tree, next);
+          assertReferenceOwnership(f);
+        } finally {
+          f.state.dispose();
+        }
+      }
+    }
+  });
+
+  for (const axis of ["horizontal", "vertical"]) {
+    for (const count of [11, 29]) {
+      it(`equalizes ${count} ${axis} panes at their exact minimum without floating-point fallback`, () => {
+        let tree = leaf(`p${count - 1}`);
+        for (let index = count - 2; index >= 0; index--)
+          tree = split(`s${index}`, leaf(`p${index}`), tree, axis);
+        const f = fixture({
+          saved: { tree, activeId: "p0" },
+          main: null,
+          getPreferences: () => ({ minPaneWidth: 100, minPaneHeight: 100 }),
+        });
+        try {
+          const length = count * 100;
+          f.state.setViewport(length, length);
+          let publishes = 0;
+          f.state.subscribe(() => publishes++);
+          f.state.equalize(`s${count - 2}`);
+          const next = f.state.getSnapshot().tree;
+          assert.equal(next.ratio, Math.floor(count / 2) / count);
+          const sizes = (node, size) =>
+            node.type === "leaf"
+              ? [size]
+              : [
+                  ...sizes(node.first, size * node.ratio),
+                  ...sizes(node.second, size * (1 - node.ratio)),
+                ];
+          assert.ok(
+            sizes(next, length).every((size) => Math.abs(size - 100) < 1e-10),
+          );
+          assert.equal(publishes, 1);
+          f.state.equalize(`s${count - 2}`);
+          assert.equal(publishes, 1);
+        } finally {
+          f.state.dispose();
+        }
+      });
+    }
+  }
+
+  it("does not treat a measurable minimum shortfall as equalization rounding error", () => {
+    let tree = leaf("p28");
+    for (let index = 27; index >= 0; index--)
+      tree = split(`s${index}`, leaf(`p${index}`), tree);
+    const f = fixture({
+      saved: { tree, activeId: "p0" },
+      main: null,
+      getPreferences: () => ({ minPaneWidth: 100 }),
+    });
+    try {
+      f.state.setViewport(2900 - 0.01, 400);
+      f.state.equalize("s0");
+      assert.equal(f.state.getSnapshot().tree.ratio, 0.5);
+      assert.equal(
+        f.state.getSnapshot().tree.first.type,
+        "leaf",
+        "an infeasible balanced candidate is not committed",
+      );
+    } finally {
+      f.state.dispose();
+    }
+  });
+
+  it("equalization preserves cross-axis ratios and respects their minima when equal shares cannot fit", () => {
+    const cross = split(
+      "cross",
+      leaf("b-pane", "b"),
+      leaf("d-pane", "d"),
+      "vertical",
+      0.3,
+    );
+    const tree = split(
+      "root",
+      leaf("a-pane", "a"),
+      split("inner", cross, leaf("c-pane", "c"), "horizontal", 0.8),
+      "horizontal",
+      0.25,
+    );
+    const f = fixture({
+      saved: { tree, activeId: "a-pane" },
+      main: null,
+      getPreferences: () => ({ minPaneWidth: 100, minPaneHeight: 100 }),
+    });
+    try {
+      const crossBefore = f.state.getSnapshot().tree.second.first;
+      f.state.setViewport(700, 400);
+      f.state.equalize("inner");
+      const equal = f.state.getSnapshot().tree;
+      assert.ok(Math.abs(equal.ratio - 1 / 3) < 1e-12);
+      assert.equal(equal.second.ratio, 0.5);
+      assert.equal(equal.second.first, crossBefore);
+      assert.equal(equal.second.first.ratio, 0.3);
+      f.state.setViewport(250, 400);
+      const before = f.state.getSnapshot();
+      f.state.equalize("inner");
+      assert.equal(
+        f.state.getSnapshot(),
+        before,
+        "an impossible row stays intact",
+      );
+      f.state.setViewport(700, 250);
+      f.state.equalize("inner");
+      assert.equal(
+        f.state.getSnapshot(),
+        before,
+        "cross-axis minima keep the row locked",
+      );
+      assertReferenceOwnership(f);
+    } finally {
+      f.state.dispose();
+    }
+  });
+
+  it("keeps a feasible unequal layout within minima when a wider cross-axis unit prevents equal shares", () => {
+    const heavy = split(
+      "cross",
+      split("cross-row", leaf("b-pane", "b"), leaf("d-pane", "d")),
+      leaf("c-pane", "c"),
+      "vertical",
+      0.6,
+    );
+    const tree = split(
+      "root",
+      leaf("a-pane", "a"),
+      split("inner", heavy, leaf("blank"), "horizontal", 0.6),
+      "horizontal",
+      0.3,
+    );
+    const f = fixture({
+      saved: { tree, activeId: "a-pane" },
+      main: null,
+      getPreferences: () => ({ minPaneWidth: 100, minPaneHeight: 100 }),
+    });
+    try {
+      f.state.setViewport(500, 400);
+      const crossBefore = f.state.getSnapshot().tree.second.first;
+      const panesBefore = leaves(f.state.getSnapshot().tree);
+      f.state.equalize("inner");
+      const next = f.state.getSnapshot().tree;
+      assert.equal(next.id, "root");
+      assert.equal(next.second.id, "inner");
+      assert.equal(next.second.first, crossBefore);
+      assert.ok(
+        leaves(next).every((pane, index) => pane === panesBefore[index]),
+      );
+      function assertMinimum(node, width, height) {
+        if (node.type === "leaf") {
+          assert.ok(width >= 100 - 1e-10);
+          assert.ok(height >= 100 - 1e-10);
+          return;
+        }
+        const horizontal = node.axis === "horizontal";
+        assertMinimum(
+          node.first,
+          horizontal ? width * node.ratio : width,
+          horizontal ? height : height * node.ratio,
+        );
+        assertMinimum(
+          node.second,
+          horizontal ? width * (1 - node.ratio) : width,
+          horizontal ? height : height * (1 - node.ratio),
+        );
+      }
+      assertMinimum(next, 500, 400);
+      assertReferenceOwnership(f);
+    } finally {
+      f.state.dispose();
+    }
+  });
+
   it("clamps initial horizontal/vertical splits to minimum dimensions", () => {
     for (const edge of ["right", "bottom"]) {
       const f = fixture({
@@ -1750,6 +2024,48 @@ describe("workspace tab activation", () => {
 });
 
 describe("workspace background chats with keep-mounted tabs", () => {
+  for (const hidden of [false, true]) {
+    it(`transferring a ${hidden ? "hidden" : "shown"} held chat evicts its background and invalidates old hold callbacks`, () => {
+      const f = fixture();
+      try {
+        const pane = paneFor(f.state, "a");
+        const original = f.state.reference("a");
+        const oldSignal = new AbortController();
+        const staleRelease = f.state.retainTab("a", oldSignal.signal);
+        if (hidden) f.state.select(pane.id, "b");
+        const navigations = f.navigationCalls.length;
+        f.state.release(["a"]);
+        assert.equal(f.state.reference("a"), undefined);
+        assert.equal(original.releases, 1);
+        assert.deepEqual(f.state.getSnapshot().background, {});
+        assert.deepEqual(sessionsIn(f.state), [hidden ? "b" : null]);
+        assert.equal(f.navigationCalls.length, navigations);
+        assert.equal(f.state.getSnapshot().undo, null);
+        f.state.release(["a"]);
+        assert.equal(original.releases, 1);
+
+        f.state.select(pane.id, "a");
+        const reacquired = f.state.reference("a");
+        const newSignal = new AbortController();
+        f.state.retainTab("a", newSignal.signal);
+        f.state.select(pane.id, "b");
+        assert.deepEqual(f.state.getSnapshot().background, { a: pane.id });
+        staleRelease();
+        staleRelease();
+        oldSignal.abort();
+        assert.deepEqual(f.state.getSnapshot().background, { a: pane.id });
+        assert.equal(f.state.reference("a"), reacquired);
+        assert.equal(reacquired.releases, 0);
+        newSignal.abort();
+        assert.deepEqual(f.state.getSnapshot().background, {});
+        assert.equal(reacquired.releases, 1);
+        assertReferenceOwnership(f);
+      } finally {
+        f.state.dispose();
+      }
+    });
+  }
+
   it("keeps a replaced chat retained behind its pane and restores it there without reacquiring", () => {
     const f = fixture();
     try {

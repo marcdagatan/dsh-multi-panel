@@ -17,7 +17,10 @@ import { normalizePreferences } from "../client/preferences.mjs";
 const h = React.createElement;
 const Session = React.createContext(null);
 
-function fixture(initialPreferences = {}, { keepMounted = false } = {}) {
+function fixture(
+  initialPreferences = {},
+  { keepMounted = false, sessionIds = ["a", "b", "c"] } = {},
+) {
   let preferences = normalizePreferences(initialPreferences);
   const preferenceListeners = new Set();
   const preferencesSource = {
@@ -59,9 +62,9 @@ function fixture(initialPreferences = {}, { keepMounted = false } = {}) {
   });
   let list = {
     phase: "ready",
-    ids: ["a", "b", "c"],
+    ids: sessionIds,
     byId: Object.fromEntries(
-      ["a", "b", "c"].map((id) => [
+      sessionIds.map((id) => [
         id,
         {
           id,
@@ -540,21 +543,85 @@ test("divider keyboard controls use the correct axis and clamp ratios without un
   }
 });
 
-test("double-clicking a divider evens out the panes it separates", () => {
+test("only a double-click equalizes feasible constrained panes in one gesture", () => {
   const ui = fixture();
   try {
     const first = ui.workspace.getSnapshot().activeId;
     act(() => ui.workspace.split(first, "b", "right"));
-    act(() => ui.workspace.resize(ui.workspace.getSnapshot().tree.id, 0.7));
-    const divider = ui.container.querySelector('[role="separator"]');
+    const second = ui.workspace.getSnapshot().activeId;
+    act(() => ui.workspace.split(second, "c", "right"));
+    act(() =>
+      ui.workspace.resize(ui.workspace.getSnapshot().tree.second.id, 0.8),
+    );
+    act(() => ui.setPreferences({ minPaneWidth: 300 }));
+    const before = ui.workspace.getSnapshot().tree;
+    const originalDraft = ui.container.querySelector('[data-native-draft="a"]');
+    const mounted = ui.mounted;
+    const divider = ui.container.querySelector(
+      '[aria-label="Resize chat panes"]',
+    );
+    click(divider);
+    assert.equal(ui.workspace.getSnapshot().tree, before);
     act(() =>
       divider.dispatchEvent(
-        new ui.container.ownerDocument.defaultView.MouseEvent("dblclick", {
-          bubbles: true,
-        }),
+        new ui.dom.window.MouseEvent("dblclick", { bubbles: true }),
       ),
     );
-    assert.equal(ui.workspace.getSnapshot().tree.ratio, 0.5);
+    const widths = paneGeometry(ui.workspace.getSnapshot().tree).panes.map(
+      ({ rect }) => rect.width * 12,
+    );
+    for (const width of widths) {
+      assert.ok(Math.abs(width - 400) < 1e-9, `expected 400px, got ${width}`);
+      assert.ok(width >= 300);
+    }
+    assert.equal(ui.mounted, mounted);
+    assert.equal(
+      ui.container.querySelector('[data-native-draft="a"]'),
+      originalDraft,
+    );
+  } finally {
+    ui.cleanup();
+  }
+});
+
+test("one double-click equalizes a long feasible run without remounting chats or sidebars", () => {
+  const sessionIds = ["a", "b", "c", "d", "e", "f", "g", "h"];
+  const ui = fixture({}, { keepMounted: true, sessionIds });
+  try {
+    for (const sessionId of sessionIds.slice(1))
+      act(() =>
+        ui.workspace.split(
+          ui.workspace.getSnapshot().activeId,
+          sessionId,
+          "right",
+        ),
+      );
+    act(() => ui.setPreferences({ minPaneWidth: 100 }));
+    const before = ui.workspace.getSnapshot().tree;
+    const nodes = [
+      ...ui.container.querySelectorAll(
+        "[data-chat-pane], [data-native-draft], [data-native-sidebar]",
+      ),
+    ];
+    const mounted = ui.mounted;
+    const divider = ui.container.querySelector(
+      '[aria-label="Resize chat panes"]',
+    );
+    click(divider);
+    assert.equal(ui.workspace.getSnapshot().tree, before);
+    act(() =>
+      divider.dispatchEvent(
+        new ui.dom.window.MouseEvent("dblclick", { bubbles: true }),
+      ),
+    );
+    const geometry = paneGeometry(ui.workspace.getSnapshot().tree);
+    assert.equal(geometry.panes.length, 8);
+    for (const { rect } of geometry.panes)
+      assert.ok(Math.abs(rect.width * 12 - 150) < 1e-9);
+    assert.equal(ui.mounted, mounted);
+    for (const node of nodes) assert.ok(ui.container.contains(node));
+    for (const sessionId of sessionIds)
+      assert.equal(ui.sidebarMounts[sessionId], 1);
   } finally {
     ui.cleanup();
   }
